@@ -109,4 +109,11 @@ export const SCENES: readonly Scene[] = [
     size: '1792x1024',
     prompt: `${PHOTO} A Black mother in her early thirties with natural curly hair in a bright open-plan office, standing by a window with a coffee in one hand and her smartphone held upright in portrait orientation in the other, smiling gently at what she reads. The camera is directly behind her shoulder, looking over her shoulder at the phone screen, which faces her and the camera. ${GREEN('phone')}`,
   },
+  {
+    key: '11-dad-commute-phone',
+    device: 'phone',
+    screen: 'parent-alerts',
+    size: '1792x1024',
+    prompt: `${PHOTO} A white father in his thirties with short light brown hair and a trimmed beard, wearing a navy jacket, sits by the window on a commuter train in the morning, reading his smartphone held upright in portrait orientation in front of his chest, with a relieved, gentle smile. The camera is directly behind his shoulder, looking over his shoulder at the phone: we see the back of his head, his shoulder and the phone screen, which faces him and the camera. Soft daylight from the train window, blurred passing city outside. ${GREEN('phone')}`,
+  },
 ];

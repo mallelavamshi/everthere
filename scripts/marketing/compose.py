@@ -29,6 +29,7 @@ PICKS = {
     "08-dad-office-phone": (2, "parent-alerts"),
     "09-dad-home-phone": (1, "parent-sessions"),
     "10-mom-office-phone": (3, "parent-transcript"),
+    "11-dad-commute-phone": (2, "parent-alerts"),
 }
 
 
