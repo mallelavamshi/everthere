@@ -4,9 +4,10 @@ EverThere is an Android app that puts a parent's live AI avatar on a caregiver's
 
 ## 1. Install the APK
 
-> **APK_LINK: TO BE FILLED IN AFTER THE RELEASE BUILD**
+> **Download:** https://github.com/mallelavamshi/everthere-app/releases/latest/download/EverThere.apk
+> (release page: https://github.com/mallelavamshi/everthere-app/releases/latest)
 
-1. Open the link above on your Android device and download the APK.
+1. Open the download link on your Android device and download the APK.
 2. Open the file. If Android asks, allow installs from this source (Settings, then Install unknown apps).
 3. Open **EverThere**.
 
@@ -71,7 +72,7 @@ Calls are capped at 10 minutes, with a warning at 8.
 
 Controller checklist. Run this on a clean Android device using **only this document**. Every step must work as written.
 
-- [ ] `APK_LINK` is filled in and downloads the release APK.
+- [ ] The download link works and downloads the release APK.
 - [ ] The APK installs and opens to the Welcome screen.
 - [ ] **Try the demo ✨** shows "Peek as a Parent" and "Peek as a Teacher".
 - [ ] Parent: comfort plan, Sessions (including Mia's flagged boo-boo session), and Caregivers all open, the bell (Alerts) opens, and photos load.
