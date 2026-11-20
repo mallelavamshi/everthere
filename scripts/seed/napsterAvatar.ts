@@ -4,10 +4,12 @@ import sharp from 'sharp';
 import type { NapsterClient } from '../../apps/api/src/napster/client';
 import { agentProviderSettings, companionDescription, companionReadiness, firstNameOf } from '../../apps/api/src/services/avatars';
 import { buildAgentInstructions } from '../../packages/shared/src/prompt';
+import { isCustomVoice } from '../../packages/shared/src/domain';
 import { avatarId } from './fixture';
 import { fullName, type Adult } from './personas';
 
-export type NapsterRec = { companionId?: string; agentId?: string };
+/** `voiceId`: the voice the agent was created with (absent in records made before Task 30). */
+export type NapsterRec = { companionId?: string; agentId?: string; voiceId?: string };
 export type SeedNapster = Pick<NapsterClient, 'createCompanion' | 'getCompanion' | 'createAgent'>;
 
 /** Napster rejects pictures of 5 MB or more ("Image is too large"); keep headroom. */
@@ -20,12 +22,15 @@ export const NAPSTER_MAX_BYTES = 4_500_000;
  * - `agent`: the companion exists (in state, or the persona names an existing one); only the agent is created.
  * - `companion+agent`: a new companion from the seeded portrait, then its agent.
  * A persona with `avatar.companionId` never gets a companion created: a state record pointing at a different
- * companion is replaced (the old companion and agent are left in Napster untouched, just no longer referenced).
+ * companion, or an agent made with a different voice, is replaced by a new agent (the old companion and agent are left
+ * in Napster untouched, just no longer referenced). A new agent is needed for a voice change because a custom voice
+ * means "no stock voiceId", and PATCH cannot clear a voiceId (null leaves it as it was). Other parents' records are
+ * never re-checked for their voice.
  */
 export function napsterPlan(a: Adult, rec: NapsterRec | undefined): 'none' | 'keep' | 'agent' | 'companion+agent' {
   if (!a.avatar) return 'none';
   const preset = a.avatar.companionId;
-  if (preset) return rec?.companionId === preset && rec.agentId ? 'keep' : 'agent';
+  if (preset) return rec?.companionId === preset && rec.agentId && rec.voiceId === a.avatar.voiceId ? 'keep' : 'agent';
   if (rec?.agentId) return 'keep';
   return rec?.companionId ? 'agent' : 'companion+agent';
 }
@@ -37,6 +42,8 @@ export type EnsureDeps = {
   flagFunctionId: string;
   /** Persists state after each Napster write (so a crash never orphans a created resource). */
   save: (rec: NapsterRec) => void;
+  /** Called with a superseded record before anything else is saved, so it is never lost (state.retired). */
+  onReplace?: (old: NapsterRec) => void;
   log?: (msg: string) => void;
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;
@@ -59,8 +66,11 @@ export async function ensureNapsterAvatar(
   const preset = a.avatar.companionId;
   let replaced: NapsterRec | undefined;
   let rec: NapsterRec = { ...(current ?? {}) };
-  if (preset && rec.companionId !== preset) {
-    if (rec.companionId || rec.agentId) replaced = { ...rec };
+  if (preset && (rec.companionId !== preset || (rec.agentId && rec.voiceId !== a.avatar.voiceId))) {
+    if (rec.companionId || rec.agentId) {
+      replaced = { ...rec };
+      d.onReplace?.(replaced);
+    }
     rec = { companionId: preset };
   }
   if (rec.agentId) return { rec, replaced };
@@ -80,19 +90,23 @@ export async function ensureNapsterAvatar(
     log(`napster: waiting for ${a.key}'s companion...`);
     await sleep(d.pollMs ?? 15_000);
   }
+  // A digital twin speaks with its own cloned voice when the agent names no stock voice (Napster docs, Agent
+  // Configuration > Voice); the agent API has no field that selects a custom voice explicitly.
+  const voice = a.avatar.voiceId;
   rec.agentId = (
     await d.napster.createAgent({
       companionId: rec.companionId,
       name: `everthere-${avatarId(a.key)}-${rec.companionId.slice(-6)}`,
-      voiceId: a.avatar.voiceId,
+      ...(isCustomVoice(voice) ? {} : { voiceId: voice }),
       language: 'en',
       mode: 'conversation',
       providerSettings: agentProviderSettings(buildAgentInstructions(firstNameOf(fullName(a)), title)),
       functions: d.flagFunctionId ? [d.flagFunctionId] : [],
     })
   ).id;
+  rec.voiceId = voice;
   d.save({ ...rec });
-  log(`napster: agent for ${a.key} -> ${rec.agentId}`);
+  log(`napster: agent for ${a.key} -> ${rec.agentId} (voice ${voice})`);
   return { rec, replaced };
 }
 
@@ -117,6 +131,9 @@ export async function toAvatarPng(img: Buffer, maxBytes = NAPSTER_MAX_BYTES): Pr
   }
   return out;
 }
+
+/** Only the Clerk users of personas on a preset (real person's) companion get their shown name synced. */
+export const syncsClerkName = (a: Adult): boolean => !!a.avatar?.companionId;
 
 /** Clerk first/last name update for an existing user whose name differs from the persona, or null. */
 export function clerkNamePatch(a: Adult, user: { first_name?: string | null; last_name?: string | null }): { first_name: string; last_name: string } | null {

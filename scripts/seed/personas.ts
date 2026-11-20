@@ -1,7 +1,7 @@
 // The seeded demo world (spec §7 "seeded demo world", §7a "Demo people", §8a "Judge access").
 // Pure data: no I/O. scripts/seed/fixture.ts turns it into the fixture PUT to /api/admin/seed.
 import { ART_BIBLE, BG_CREAM } from '../assets/artBible';
-import type { Voice } from '../../packages/shared/src/domain';
+import { customVoice, type Voice } from '../../packages/shared/src/domain';
 
 export const DEMO_EMAIL_DOMAIN = 'everthere.app';
 export const ORG_TZ = 'America/Chicago';
@@ -39,12 +39,17 @@ export type Adult = {
    * Parents only: their live avatar (Napster companion + agent from the 16:9 portrait). `companionId` names a companion
    * that already exists in Napster (a real person's own avatar): the seed never creates one for this parent, only an
    * agent on it, and the app photo is that companion's preview image.
+   * `voiceId` is a stock voice, or `custom:<id>` for a digital twin's own cloned voice (its agent then gets no stock
+   * voiceId, so the twin speaks with the cloned voice). `ownLikeness`: the face and voice are the account owner's own
+   * (a real person), recorded as such instead of "AI-generated".
    */
-  avatar?: { parentTitle: string; voiceId: Voice; companionId?: string };
+  avatar?: { parentTitle: string; voiceId: Voice | `custom:${string}`; companionId?: string; ownLikeness?: true };
 };
 
 /** The user's own Napster companion ("vamshi krishna"), who plays Mia's Daddy in the demo. Never the older 9ef1fd74-... one. */
 export const VAMSHI_COMPANION_ID = '38a631dd-d5ff-4de1-bfac-89f09168eb07';
+/** That companion's ElevenLabs voice clone (`customVoices[0].id`; its ElevenLabs externalId is zSauqAxjaYLHbQBS9gPh). */
+export const VAMSHI_CUSTOM_VOICE_ID = '5edcdc24-1ebc-487c-b631-4ac6275aebf1';
 
 const email = (first: string, last: string) => `${first}.${last}.demo@${DEMO_EMAIL_DOMAIN}`.toLowerCase();
 
@@ -70,7 +75,7 @@ export const ADULTS: Record<AdultKey, Adult> = {
     lastName: 'Krishna',
     email: email('Marcus', 'Johnson'),
     role: "Mia's dad (\"Daddy\"), Sarah's partner; the user's own Napster avatar",
-    avatar: { parentTitle: 'Daddy', voiceId: 'cedar', companionId: VAMSHI_COMPANION_ID },
+    avatar: { parentTitle: 'Daddy', voiceId: customVoice(VAMSHI_CUSTOM_VOICE_ID) as `custom:${string}`, companionId: VAMSHI_COMPANION_ID, ownLikeness: true },
   },
   david: {
     key: 'david',

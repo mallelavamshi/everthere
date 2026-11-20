@@ -143,10 +143,13 @@ describe('buildFixture', () => {
       userId: 'user_dryrun_marcus',
       napsterCompanionId: VAMSHI_COMPANION_ID,
       napsterAgentId: 'dryrun-agent-marcus',
-      voiceId: 'cedar',
+      voiceId: 'custom:5edcdc24-1ebc-487c-b631-4ac6275aebf1',
       parentTitle: 'Daddy',
       photoKey: 'avatar/user_dryrun_marcus/abcdefghijklmnopqrstu.png',
+      likeness: { kind: 'self', ownerName: 'Vamshi Krishna' },
     });
+    // Every other avatar is an AI-generated face: no likeness, so the API records it as synthetic.
+    expect(f.avatars.filter((a) => a.likeness).map((a) => a.id)).toEqual(['demo.av.marcus']);
     expect(f.users.find((u) => u.id === 'user_dryrun_marcus')).toEqual(
       expect.objectContaining({ name: 'Vamshi Krishna', email: 'marcus.johnson.demo@everthere.app' }),
     );

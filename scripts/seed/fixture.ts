@@ -141,6 +141,8 @@ export function buildFixture(ids: SeedIds, seededAt: number): DemoFixture {
           photoKey: made.photoKey,
           parentTitle: a.avatar!.parentTitle,
           consentAt: seededAt - 14 * DAY,
+          // The owner's own digital twin is recorded as a real person's consented likeness, not an AI-generated face.
+          ...(a.avatar!.ownLikeness ? { likeness: { kind: 'self' as const, ownerName: fullName(a) } } : {}),
         };
       }),
     plans: PLANS.map((p) => ({

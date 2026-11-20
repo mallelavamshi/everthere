@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ART_BIBLE } from '../../assets/artBible';
-import { ADULTS, CHILDREN, CLASSROOM, ORG, PERSONAS, PLANS, ROSTER_PARENT_KEYS, SESSIONS, VAMSHI_COMPANION_ID, fullName } from '../personas';
+import { ADULTS, CHILDREN, CLASSROOM, ORG, PERSONAS, PLANS, ROSTER_PARENT_KEYS, SESSIONS, VAMSHI_COMPANION_ID, VAMSHI_CUSTOM_VOICE_ID, fullName } from '../personas';
 
 describe('personas', () => {
   it('has the six story adults from the brief, then the synthetic roster parents, with *.demo@everthere.app emails', () => {
@@ -34,7 +34,10 @@ describe('personas', () => {
   it("makes Mia's Daddy the user's own Napster companion, keeping the internal key and the existing Clerk email", () => {
     const daddy = ADULTS.marcus;
     expect(fullName(daddy)).toBe('Vamshi Krishna');
-    expect(daddy.avatar).toEqual({ parentTitle: 'Daddy', voiceId: 'cedar', companionId: VAMSHI_COMPANION_ID });
+    // Task 30: his own cloned voice and a truthful likeness record.
+    expect(daddy.avatar).toEqual({ parentTitle: 'Daddy', voiceId: `custom:${VAMSHI_CUSTOM_VOICE_ID}`, companionId: VAMSHI_COMPANION_ID, ownLikeness: true });
+    expect(VAMSHI_CUSTOM_VOICE_ID).toBe('5edcdc24-1ebc-487c-b631-4ac6275aebf1');
+    for (const a of Object.values(ADULTS)) if (a.key !== 'marcus') expect(a.avatar?.ownLikeness, a.key).toBeUndefined();
     expect(VAMSHI_COMPANION_ID).toBe('38a631dd-d5ff-4de1-bfac-89f09168eb07');
     // The email is the existing Clerk user's key (unchanged), so no new user is needed for the rename.
     expect(daddy.email).toBe('marcus.johnson.demo@everthere.app');

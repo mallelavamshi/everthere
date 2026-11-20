@@ -46,7 +46,7 @@ import { centerOnCanvas } from '../assets/imageOps';
 import { ADULTS, CHILDREN, ORG, PERSONAS, SESSIONS, fullName, type Adult, type AdultKey, type ChildKey } from './personas';
 import { buildFixture, familyIdOf, inviteCodesOf, placeholderIds, randomInviteCodes, type SeedIds } from './fixture';
 import { CLAY_CRITERIA, PHOTO_CRITERIA, contactSheetHtml, scoreAndPick, type SheetRow } from './pick';
-import { NAPSTER_MAX_BYTES, clerkNamePatch, ensureNapsterAvatar, napsterPlan, needsCompanionPhoto, previewUrlOf, toAvatarPng, type NapsterRec } from './napsterAvatar';
+import { NAPSTER_MAX_BYTES, clerkNamePatch, ensureNapsterAvatar, napsterPlan, needsCompanionPhoto, previewUrlOf, syncsClerkName, toAvatarPng, type NapsterRec } from './napsterAvatar';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
@@ -110,7 +110,7 @@ type State = {
   /** Preset companion id each companion-backed adult's current photo key was made from. */
   photoFrom: Partial<Record<AdultKey, string>>;
   /** Napster records superseded by a preset companion. Kept for reference only; never deleted anywhere. */
-  retired: { key: AdultKey; companionId?: string; agentId?: string; at: string }[];
+  retired: { key: AdultKey; companionId?: string; agentId?: string; voiceId?: string; at: string }[];
 };
 
 const readJsonFile = <T>(file: string, fallback: T): T => (existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as T) : fallback);
@@ -199,8 +199,9 @@ async function clerk<T>(method: string, p: string, body?: unknown | FormData): P
 
 async function clerkUsers(state: State): Promise<void> {
   for (const a of SELECTED) {
-    if (state.clerk[a.key]) {
-      // Existing user: only the displayed name is kept in step with the persona (never a new user for a rename).
+    if (state.clerk[a.key] && syncsClerkName(a)) {
+      // Existing user on a real person's companion: only the displayed name is kept in step with the persona (never a
+      // new user for a rename). The AI-face demo users are left as they are.
       const user = await clerk<{ first_name?: string | null; last_name?: string | null }>('GET', `/users/${state.clerk[a.key]}`);
       const patch = clerkNamePatch(a, user);
       if (patch) {
@@ -326,10 +327,14 @@ async function napsterAvatars(state: State): Promise<void> {
         state.napster[a.key] = { ...r };
         saveState(state);
       },
+      // Recorded before the first save, so a crash can never lose which companion/agent was superseded.
+      onReplace: (old) => {
+        state.retired.push({ key: a.key, ...old, at: new Date().toISOString() });
+        saveState(state);
+      },
       log: (m) => console.log(m),
     });
     if (replaced) {
-      state.retired.push({ key: a.key, ...replaced, at: new Date().toISOString() });
       console.log(
         `napster: ${a.key} now uses preset companion ${rec.companionId}; previous companion ${replaced.companionId ?? '-'} / ` +
           `agent ${replaced.agentId ?? '-'} kept in Napster, no longer referenced`,
@@ -405,7 +410,8 @@ function planRun(): void {
   line(ONLY ? '1-2. Faces: skipped (targeted run).' : `1-2. Faces: ${SUBJECTS.length} subjects (local candidates reused; Meta only for subjects with none).`);
   line('3. Clerk:');
   for (const a of SELECTED) {
-    line(`     - ${a.key.padEnd(7)} ${state.clerk[a.key] ? `existing ${state.clerk[a.key]}: GET, and PATCH the name if it is not "${fullName(a)}"` : `CREATE ${a.email} (${fullName(a)})`}`);
+    const existing = syncsClerkName(a) ? `GET, and PATCH the name if it is not "${fullName(a)}"` : 'keep';
+    line(`     - ${a.key.padEnd(7)} ${state.clerk[a.key] ? `existing ${state.clerk[a.key]}: ${existing}` : `CREATE ${a.email} (${fullName(a)})`}`);
   }
   line('   Photos from preset companions:');
   for (const a of SELECTED.filter((x) => x.avatar?.companionId)) {
@@ -423,8 +429,8 @@ function planRun(): void {
     const p = napsterPlan(a, rec);
     const what =
       p === 'keep' ? `keep companion ${rec!.companionId} / agent ${rec!.agentId}` :
-      p === 'agent' ? `CREATE AGENT on companion ${a.avatar!.companionId ?? rec!.companionId}` +
-        (a.avatar!.companionId && rec?.companionId && rec.companionId !== a.avatar!.companionId ? ` (retire ${rec.companionId} / ${rec.agentId ?? '-'} in state only)` : '') :
+      p === 'agent' ? `CREATE AGENT (voice ${a.avatar!.voiceId}) on companion ${a.avatar!.companionId ?? rec!.companionId}` +
+        (a.avatar!.companionId && rec?.agentId ? ` (retire ${rec.companionId} / ${rec.agentId} [voice ${rec.voiceId ?? 'not recorded'}] in state only)` : '') :
       'CREATE COMPANION + AGENT';
     line(`     - ${a.key.padEnd(7)} ${what}`);
   }
