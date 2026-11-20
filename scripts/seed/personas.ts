@@ -33,10 +33,18 @@ export type Adult = {
   email: string;
   /** Who they are in the demo story. */
   role: string;
-  portraitPrompt: string;
-  /** Parents only: their live avatar (Napster companion + agent from the 16:9 portrait). */
-  avatar?: { parentTitle: string; voiceId: Voice };
+  /** AI portrait prompt. Absent when the face comes from an existing Napster companion (`avatar.companionId`). */
+  portraitPrompt?: string;
+  /**
+   * Parents only: their live avatar (Napster companion + agent from the 16:9 portrait). `companionId` names a companion
+   * that already exists in Napster (a real person's own avatar): the seed never creates one for this parent, only an
+   * agent on it, and the app photo is that companion's preview image.
+   */
+  avatar?: { parentTitle: string; voiceId: Voice; companionId?: string };
 };
+
+/** The user's own Napster companion ("vamshi krishna"), who plays Mia's Daddy in the demo. Never the older 9ef1fd74-... one. */
+export const VAMSHI_COMPANION_ID = '38a631dd-d5ff-4de1-bfac-89f09168eb07';
 
 const email = (first: string, last: string) => `${first}.${last}.demo@${DEMO_EMAIL_DOMAIN}`.toLowerCase();
 
@@ -53,17 +61,16 @@ export const ADULTS: Record<AdultKey, Adult> = {
     ),
     avatar: { parentTitle: 'Mommy', voiceId: 'marin' },
   },
+  // Mia's Daddy is the user's own Napster avatar (Task 29). The persona key `marcus` and the email stay as they were:
+  // they are internal ids for the existing Clerk user, the avatar row (demo.av.marcus) and every fixture reference.
+  // Only what is shown changes: the name and the face.
   marcus: {
     key: 'marcus',
-    firstName: 'Marcus',
-    lastName: 'Johnson',
+    firstName: 'Vamshi',
+    lastName: 'Krishna',
     email: email('Marcus', 'Johnson'),
-    role: "Mia's dad (\"Daddy\"), Sarah's partner",
-    portraitPrompt: photoreal(
-      'a Black man in his mid 30s with a short neat beard and close-cropped hair, deep brown skin, wearing a navy henley shirt',
-      'a cozy kitchen with warm wood cabinets',
-    ),
-    avatar: { parentTitle: 'Daddy', voiceId: 'cedar' },
+    role: "Mia's dad (\"Daddy\"), Sarah's partner; the user's own Napster avatar",
+    avatar: { parentTitle: 'Daddy', voiceId: 'cedar', companionId: VAMSHI_COMPANION_ID },
   },
   david: {
     key: 'david',

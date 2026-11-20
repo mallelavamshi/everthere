@@ -1,5 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": { "noEmit": true, "types": ["node"] },
-  "include": ["assets/**/*.ts", "seed/personas.ts", "seed/fixture.ts", "seed/pick.ts", "seed/test/**/*.ts"]
+  "include": ["assets/**/*.ts", "seed/personas.ts", "seed/fixture.ts", "seed/pick.ts", "seed/test/**/*.ts"],
+  // Like seed.ts and napster/, this test pulls in apps/api code that needs the Workers types: vitest covers it.
+  "exclude": ["seed/test/napsterAvatar.test.ts"]
 }

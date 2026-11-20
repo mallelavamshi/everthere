@@ -37,6 +37,22 @@ export function randomInviteCodes(): Record<string, string> {
   return out;
 }
 
+/**
+ * The slot -> code map of an earlier fixture (the one last PUT), or null when it does not cover every slot. A targeted
+ * re-seed reuses these so the push keeps the demo world's existing invite rows instead of replacing them.
+ */
+export function inviteCodesOf(prev: { invites?: { code: string; type: string; payload: Record<string, unknown> }[] } | null): Record<string, string> | null {
+  if (!prev?.invites) return null;
+  const out: Record<string, string> = {};
+  for (const i of prev.invites) {
+    const enr = typeof i.payload.enrollmentId === 'string' ? /^demo\.enr\.(.+)$/.exec(i.payload.enrollmentId)?.[1] : undefined;
+    const slot = i.type === 'parent_enrollment' && enr ? `enroll.${enr}` : i.type;
+    out[slot] = i.code;
+  }
+  const slots = inviteSlots();
+  return slots.every((s) => out[s]) && new Set(slots.map((s) => out[s])).size === slots.length ? Object.fromEntries(slots.map((s) => [s, out[s]!])) : null;
+}
+
 // Fixed fixture ids. They contain '.', which never appears in server ids (nanoid) or Clerk ids, so they can't collide.
 export const familyIdOf = (c: Child): string =>
   c.parents.length ? `demo.fam.${ADULTS[c.parents[0]!].lastName.toLowerCase()}` : `demo.fam.${c.key}`;
@@ -48,7 +64,10 @@ export const sessionId = (s: SessionSeed) => `demo.sess.${s.key}`;
 export function placeholderIds(): SeedIds {
   const users = Object.fromEntries(Object.keys(ADULTS).map((k) => [k, `user_dryrun_${k}`])) as Record<AdultKey, string>;
   const avatars: SeedIds['avatars'] = {};
-  for (const a of Object.values(ADULTS)) if (a.avatar) avatars[a.key] = { companionId: `dryrun-companion-${a.key}`, agentId: `dryrun-agent-${a.key}`, photoKey: null };
+  for (const a of Object.values(ADULTS)) {
+    // A persona's preset (already existing) companion is real even in a dry run; everything else is a placeholder.
+    if (a.avatar) avatars[a.key] = { companionId: a.avatar.companionId ?? `dryrun-companion-${a.key}`, agentId: `dryrun-agent-${a.key}`, photoKey: null };
+  }
   return { users, avatars, childPhotos: {}, logoKey: null, inviteCodes: randomInviteCodes() };
 }
 

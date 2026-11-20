@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { ART_BIBLE } from '../../assets/artBible';
-import { ADULTS, CHILDREN, CLASSROOM, ORG, PERSONAS, PLANS, ROSTER_PARENT_KEYS, SESSIONS, fullName } from '../personas';
+import { ADULTS, CHILDREN, CLASSROOM, ORG, PERSONAS, PLANS, ROSTER_PARENT_KEYS, SESSIONS, VAMSHI_COMPANION_ID, fullName } from '../personas';
 
 describe('personas', () => {
   it('has the six story adults from the brief, then the synthetic roster parents, with *.demo@everthere.app emails', () => {
     expect(Object.values(ADULTS).map(fullName)).toEqual([
-      'Sarah Johnson', 'Marcus Johnson', 'David Kim', 'Rosa Alvarez', 'Jess Parker', 'Tanya Brooks',
+      'Sarah Johnson', 'Vamshi Krishna', 'David Kim', 'Rosa Alvarez', 'Jess Parker', 'Tanya Brooks',
       'Hannah Haddad', 'Omar Haddad', 'Amara Okafor', 'Mateo Rivera', 'Priya Patel',
     ]);
     // Roster parents are never sign-in personas, and each has an avatar.
@@ -18,7 +18,7 @@ describe('personas', () => {
     expect(new Set(emails).size).toBe(emails.length);
   });
 
-  it('casts the story: Sarah is Mommy, Marcus and Sarah are Mia\'s parents, David is Leo\'s only parent with Rosa as nanny', () => {
+  it('casts the story: Sarah is Mommy, Vamshi (key marcus) and Sarah are Mia\'s parents, David is Leo\'s only parent with Rosa as nanny', () => {
     expect(ADULTS.sarah.avatar?.parentTitle).toBe('Mommy');
     expect(ADULTS.marcus.avatar?.parentTitle).toBe('Daddy');
     expect(ADULTS.david.avatar?.parentTitle).toBe('Daddy');
@@ -29,6 +29,31 @@ describe('personas', () => {
     expect(leo.parents).toEqual(['david']);
     expect(leo.homeCaregiver).toBe('rosa');
     expect(PERSONAS).toEqual({ parent: 'sarah', teacher: 'jess' });
+  });
+
+  it("makes Mia's Daddy the user's own Napster companion, keeping the internal key and the existing Clerk email", () => {
+    const daddy = ADULTS.marcus;
+    expect(fullName(daddy)).toBe('Vamshi Krishna');
+    expect(daddy.avatar).toEqual({ parentTitle: 'Daddy', voiceId: 'cedar', companionId: VAMSHI_COMPANION_ID });
+    expect(VAMSHI_COMPANION_ID).toBe('38a631dd-d5ff-4de1-bfac-89f09168eb07');
+    // The email is the existing Clerk user's key (unchanged), so no new user is needed for the rename.
+    expect(daddy.email).toBe('marcus.johnson.demo@everthere.app');
+    // His face is the companion's, so there is no AI portrait to generate. Mommy is unchanged.
+    expect(daddy.portraitPrompt).toBeUndefined();
+    expect(fullName(ADULTS.sarah)).toBe('Sarah Johnson');
+    expect(ADULTS.sarah.avatar).toEqual({ parentTitle: 'Mommy', voiceId: 'marin' });
+    // His comfort plan with Mia stays.
+    expect(PLANS.find((p) => p.child === 'mia' && p.parent === 'marcus')).toMatchObject({ tone: 'calm', nicknames: ['Mimi', 'Champ'] });
+  });
+
+  it('shows no leftover "Marcus" name in any seeded copy (roles, plans, transcripts, summaries)', () => {
+    // Only text a person can read; persona keys (`marcus`) and the internal Clerk email are ids, not copy.
+    const shown = [
+      ...Object.values(ADULTS).flatMap((a) => [a.firstName, a.lastName, a.role]),
+      ...PLANS.flatMap((p) => [...p.nicknames, ...p.favorites, ...p.phrases, p.songTitle, p.songLyrics, ...p.neverTopics, p.todayNote]),
+      ...SESSIONS.flatMap((s) => [s.summary, s.caregiverNote, s.flag?.quote, ...s.lines.map((l) => l.text)]),
+    ].filter((x): x is string => typeof x === 'string');
+    expect(shown.filter((t) => /marcus/i.test(t))).toEqual([]);
   });
 
   it('places Jess in the Butterflies Room and Tanya as admin of Little Acorns Daycare (America/Chicago)', () => {
@@ -56,6 +81,9 @@ describe('personas', () => {
 
   it('uses photoreal waist-up prompts for adults and illustrated clay prompts for children', () => {
     for (const a of Object.values(ADULTS)) {
+      // Exactly the adults whose face is an existing Napster companion have no AI portrait prompt.
+      expect(a.portraitPrompt === undefined, a.key).toBe(!!a.avatar?.companionId);
+      if (!a.portraitPrompt) continue;
       expect(a.portraitPrompt).toMatch(/^Photorealistic waist-up portrait/);
       expect(a.portraitPrompt).toMatch(/(late 20s|early 30s|mid 30s|late 30s)/);
       expect(a.portraitPrompt).toMatch(/looking straight at the camera/i);

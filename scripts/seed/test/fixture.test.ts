@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DemoFixture } from '../../../packages/shared/src/demo';
-import { buildFixture, inviteSlots, localTimeBefore, placeholderIds, randomInviteCodes, type SeedIds } from '../fixture';
-import { CHILDREN, SESSIONS } from '../personas';
+import { buildFixture, inviteCodesOf, inviteSlots, localTimeBefore, placeholderIds, randomInviteCodes, type SeedIds } from '../fixture';
+import { CHILDREN, SESSIONS, VAMSHI_COMPANION_ID } from '../personas';
 
 // A Chicago afternoon (CST): 2026-11-18 15:00 local = 21:00 UTC.
 const SEEDED = Date.UTC(2026, 10, 18, 21, 0, 0);
@@ -85,6 +85,13 @@ describe('buildFixture', () => {
     for (const id of [...f.children, ...f.sessions, ...f.families, ...f.avatars, ...f.connections].map((x) => x.id)) expect(id).toContain('.');
   });
 
+  it('reads the slot codes back from an earlier fixture (for a targeted re-seed), or null when any is missing', () => {
+    expect(inviteCodesOf(JSON.parse(JSON.stringify(f)))).toEqual(CODES);
+    expect(buildFixture({ ...ids(), inviteCodes: inviteCodesOf(f)! }, SEEDED).invites).toEqual(f.invites);
+    expect(inviteCodesOf({ invites: f.invites.slice(1) })).toBeNull();
+    expect(inviteCodesOf(null)).toBeNull();
+  });
+
   it('carries the 8 sessions before the seed, at their local Chicago times, with transcripts', () => {
     expect(f.sessions).toHaveLength(8);
     for (const s of f.sessions) {
@@ -128,6 +135,29 @@ describe('buildFixture', () => {
     expect(f.children.find((c) => c.id === 'demo.child.mia')!.photoKey).toBe('child/demo.fam.johnson/abcdefghijklmnopqrstu.png');
     expect(f.avatars.every((a) => a.photoKey?.startsWith('avatar/'))).toBe(true);
     expect(f.plans.find((p) => p.childId === 'demo.child.mia' && p.avatarId === 'demo.av.sarah')!.todayNote).toMatch(/sleep/);
+  });
+
+  it("shows Mia's Daddy as Vamshi Krishna on his own companion, with the run's agent and photo key", () => {
+    const daddy = f.avatars.find((a) => a.id === 'demo.av.marcus')!;
+    expect(daddy).toMatchObject({
+      userId: 'user_dryrun_marcus',
+      napsterCompanionId: VAMSHI_COMPANION_ID,
+      napsterAgentId: 'dryrun-agent-marcus',
+      voiceId: 'cedar',
+      parentTitle: 'Daddy',
+      photoKey: 'avatar/user_dryrun_marcus/abcdefghijklmnopqrstu.png',
+    });
+    expect(f.users.find((u) => u.id === 'user_dryrun_marcus')).toEqual(
+      expect.objectContaining({ name: 'Vamshi Krishna', email: 'marcus.johnson.demo@everthere.app' }),
+    );
+    // Mia's family keeps both ready avatars: Mommy and Daddy, each with a plan for Mia.
+    const mia = f.children.find((c) => c.id === 'demo.child.mia')!;
+    const members = f.familyMembers.filter((m) => m.familyId === mia.familyId).map((m) => m.userId);
+    expect(f.avatars.filter((a) => members.includes(a.userId)).map((a) => a.parentTitle).sort()).toEqual(['Daddy', 'Mommy']);
+    expect(f.plans.filter((p) => p.childId === mia.id).map((p) => p.parentTitle).sort()).toEqual(['Daddy', 'Mommy']);
+    expect(mia.familyId).toBe('demo.fam.johnson'); // family id comes from Sarah, so it is unchanged
+    // Other parents still use their own (placeholder) companions.
+    expect(f.avatars.find((a) => a.id === 'demo.av.sarah')!.napsterCompanionId).toBe('dryrun-companion-sarah');
   });
 
   it('refuses to build without a Napster avatar for every parent', () => {
