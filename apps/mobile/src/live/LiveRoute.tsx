@@ -17,6 +17,8 @@ export interface LiveRouteState {
   childName?: string;
   caregiverName?: string;
   parentTitle: string;
+  /** The parent's photo, shown while dialing (task 31). */
+  parentPhotoUrl?: string;
   songTitle?: string;
   songLyrics?: string;
   returnTo?: string;

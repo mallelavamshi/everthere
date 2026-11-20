@@ -32,8 +32,10 @@ export function videoFrame(width?: number, height?: number): VideoFrame {
  * Watches the SDK's mount container for its <video> (`.np_companion-avatar-video`, 2.0.0 bundle) and reads
  * videoWidth/videoHeight on loadedmetadata and resize (the stream can change size). 16:9 until then.
  */
-export function useVideoFrame(container: RefObject<HTMLElement | null>): VideoFrame {
+export function useVideoFrame(container: RefObject<HTMLElement | null>): VideoFrame & { shown: boolean } {
   const [frame, setFrame] = useState<VideoFrame>(() => videoFrame());
+  // True once the stream has a frame on screen (task 31: the dialing face stays up until then).
+  const [shown, setShown] = useState(false);
   useEffect(() => {
     const root = container.current;
     if (!root) return;
@@ -45,7 +47,10 @@ export function useVideoFrame(container: RefObject<HTMLElement | null>): VideoFr
     };
     // Until the stream has a frame the video is kept invisible (opacity 0 via [data-et-waiting] in global.css, never
     // display:none, so playback is unaffected): only our own connecting UI shows in the frame (task 26c round 3).
-    const reveal = () => video?.removeAttribute('data-et-waiting');
+    const reveal = () => {
+      video?.removeAttribute('data-et-waiting');
+      if (video) setShown(true);
+    };
     const attach = () => {
       const v = root.querySelector<HTMLVideoElement>('video.np_companion-avatar-video') ?? root.querySelector('video');
       if (v === video) return;
@@ -56,7 +61,10 @@ export function useVideoFrame(container: RefObject<HTMLElement | null>): VideoFr
       video = v;
       if (video) {
         video.setAttribute('poster', TRANSPARENT_POSTER);
-        if (video.readyState < HAVE_CURRENT_DATA) video.setAttribute('data-et-waiting', '');
+        if (video.readyState < HAVE_CURRENT_DATA) {
+          video.setAttribute('data-et-waiting', '');
+          setShown(false);
+        } else setShown(true);
         video.addEventListener('playing', reveal);
         video.addEventListener('loadeddata', reveal);
       }
@@ -75,7 +83,7 @@ export function useVideoFrame(container: RefObject<HTMLElement | null>): VideoFr
       video?.removeEventListener('loadeddata', reveal);
     };
   }, [container]);
-  return frame;
+  return { ...frame, shown };
 }
 
 const landscapeQuery = '(orientation: landscape)';

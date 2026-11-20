@@ -12,8 +12,9 @@ import { EndCard, FullScreen, LiveError } from './parts/FullScreens';
 import { FlagSheet, VolumeSheet } from './parts/Sheets';
 import type { LiveSdk } from './sdk';
 import { useNapsterSession, type LiveRequest, type StartResult, type UseNapsterSessionOptions } from './useNapsterSession';
-import { cropAspect, useFrameMode, useLongPress, usePortraitPhone } from './frameMode';
+import { PHONE_FRAME, cropAspect, usePortraitPhone } from './frameMode';
 import { useLandscape, useVideoFrame } from './videoFrame';
+import { liveMark } from './timing';
 
 export { FLAG_LABELS } from './parts/Sheets';
 export { captionTail } from './parts/Captions';
@@ -28,6 +29,8 @@ export interface LiveSessionProps {
   caregiverName?: string;
   /** What the child calls the parent ("Mom", "Papa"). */
   parentTitle: string;
+  /** The parent's own photo (signed URL): shown in the frame while dialing, until the avatar video plays (task 31). */
+  parentPhotoUrl?: string;
   /**
    * "Our song" for the DEV fake. Real calls get the song from the server's session context (GET /context), which
    * wins over these; the button shows only when one of them has a title.
@@ -74,7 +77,7 @@ function useNow(on: boolean, every = 1000): number {
  * Shared by parent test calls and caregiver sessions; mount it at /live/:mode or embed it.
  */
 export function LiveSession(props: LiveSessionProps) {
-  const { mode, avatarId, childId, reason, childName, caregiverName, parentTitle, songTitle, songLyrics } = props;
+  const { mode, avatarId, childId, reason, childName, caregiverName, parentTitle, parentPhotoUrl, songTitle, songLyrics } = props;
   useStatusBar('sunset');
 
   const startRef = useRef<() => Promise<StartResult>>(() => Promise.reject(new Error('unset')));
@@ -134,8 +137,7 @@ export function LiveSession(props: LiveSessionProps) {
   const bannerCopy = mode === 'child' ? `⚑ Flagged for ${parentTitle} — we'll let them know` : '⚑ Flag noted — this is how you would hear about it';
   // The SDK shows its own mic-permission card in its root: give it the whole stage, not the small frame (global.css).
   const inPermission = state === 'connecting' && (s.sdkStatus === 'permissionPending' || s.sdkStatus === 'permissionBlocked');
-  // Nothing of ours under the card: no "Calling…" while the mic is pending or blocked (26c).
-  const showConnecting = state === 'connecting' && !inPermission;
+  // Nothing of ours under the card: no "Calling…" while the mic is pending or blocked (26c); see `dialing` below.
   const announce = ctx.announce ? `${ctx.announce.role === 'avatar' ? parentTitle : childName?.trim() || 'Child'}: ${ctx.announce.text}` : '';
 
   const onEnd = () => {
@@ -152,20 +154,23 @@ export function LiveSession(props: LiveSessionProps) {
   const rootStyle = { background: gradients.sunset, '--caption-scrim': gradients.captionScrim } as CSSProperties;
   // P-3: the frame takes the video's own aspect ratio and never grows past its intrinsic width.
   const frame = useVideoFrame(s.containerRef);
-  // Task 28 (experiment): on a portrait phone a crop mode makes the frame taller and the video covers it, cutting only
-  // its sides. Never while the SDK's mic card has the stage. Long-press the frame to cycle the modes (frameMode.ts).
+  // Task 31: dialing looks like calling a person. The parent's face fills the frame from the tap until the avatar's
+  // video is really on screen (onAvatarReady comes before the first frame), then fades into the live video. Without a
+  // photo the spinner shows while connecting, as before.
+  const [faceFailed, setFaceFailed] = useState(false);
+  const dialing = !inPermission && (state === 'connecting' || (state === 'live' && !frame.shown));
+  const showFace = dialing && !!parentPhotoUrl && !faceFailed;
+  useEffect(() => {
+    if (frame.shown) liveMark('avatar video on screen');
+  }, [frame.shown]);
+  // On a portrait phone the frame is 4:5 and the video covers it, cutting only its sides (task 28/31). Never while
+  // the SDK's mic card has the stage.
   const portraitPhone = usePortraitPhone();
-  const [frameMode, cycleFrameMode] = useFrameMode();
-  const crop = inPermission ? null : cropAspect(frameMode, portraitPhone);
+  const crop = inPermission ? null : cropAspect(portraitPhone);
   const heroVars: Record<string, string> = crop
     ? { '--live-aspect': String(crop) }
     : { '--live-aspect': String(frame.aspect), '--live-video-w': `${frame.maxWidth}px` };
   const heroStyle = heroVars as CSSProperties;
-  const framePress = useLongPress(() => {
-    const next = cycleFrameMode();
-    haptics.light();
-    toast.info(`Frame ${next}`, { icon: '🖼️' });
-  }, portraitPhone && !inPermission);
   // P-6: portrait captions get their own reserved band between the stage and the controls; landscape overlays them
   // on the bottom of the frame. Either way they can never reach the controls.
   const landscape = useLandscape();
@@ -240,11 +245,39 @@ export function LiveSession(props: LiveSessionProps) {
         {/* The stage: what is left between the chips and the captions/controls. The frame is centred in it at the
             video's aspect ratio (P-3), on the screen's own soft gradient. */}
         <div className={clsx('live-stage', inPermission && 'is-permission')} data-testid="live-stage">
-          <div className={clsx('live-hero', crop && 'is-crop')} style={heroStyle} data-testid="live-hero" data-frame-mode={crop ? frameMode : '16:9'}>
-            <div className="live-frame absolute inset-0 overflow-hidden rounded-[24px] bg-white/20 ring-[3px] ring-white/80" {...framePress}>
+          <div className={clsx('live-hero', crop && 'is-crop')} style={heroStyle} data-testid="live-hero" data-frame-mode={crop ? PHONE_FRAME : '16:9'}>
+            <div className="live-frame absolute inset-0 overflow-hidden rounded-[24px] bg-white/20 ring-[3px] ring-white/80">
               {/* The SDK owns this node's children: React never renders into it. */}
               <div ref={s.containerRef} className="et-avatar-host absolute inset-0" data-testid="avatar-container" />
-              {showConnecting ? (
+              <AnimatePresence>
+                {showFace ? (
+                  <fm.div
+                    key="dialing-face"
+                    className="live-dialing pointer-events-none absolute inset-0"
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, ease: 'easeOut' }}
+                  >
+                    <img
+                      src={parentPhotoUrl}
+                      alt=""
+                      data-testid="live-dialing-face"
+                      className="live-dialing-face absolute inset-0 h-full w-full object-cover"
+                      onError={() => setFaceFailed(true)}
+                      draggable={false}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 bg-gradient-to-t from-ink/55 to-transparent px-4 pb-5 pt-16">
+                      <span className="flex items-center gap-1.5" aria-hidden="true">
+                        <span className="et-dial-dot" />
+                        <span className="et-dial-dot" style={{ animationDelay: '0.2s' }} />
+                        <span className="et-dial-dot" style={{ animationDelay: '0.4s' }} />
+                      </span>
+                      <p className="rounded-full bg-white/90 px-4 py-1.5 text-[17px] font-semibold text-ink">Calling {parentTitle}…</p>
+                    </div>
+                  </fm.div>
+                ) : null}
+              </AnimatePresence>
+              {state === 'connecting' && !inPermission && !showFace ? (
                 <div className="pointer-events-none absolute inset-0 grid place-items-center">
                   <div className="flex flex-col items-center gap-2 text-center">
                     <span className="relative grid h-20 w-20 place-items-center">

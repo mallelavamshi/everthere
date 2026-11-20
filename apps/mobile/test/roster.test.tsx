@@ -231,6 +231,19 @@ describe('Roster tiles', () => {
     });
   });
 
+  it("the call carries the parent's face for the dialing screen (task 31)", async () => {
+    const withFace = tile({ name: 'Mia', readyAvatars: [{ avatarId: 'a-Mia', parentTitle: 'Mommy', parentName: 'Sarah', photoUrl: 'https://m/sarah.png' }] });
+    stub(roomsOf(ROOMS[0]), rosterOf(withFace));
+    const user = userEvent.setup();
+    mount(teacherMe());
+    await user.click(await screen.findByRole('button', { name: /Mia/ }));
+    const sheet = await screen.findByRole('dialog', { name: /What's going on with Mia/ });
+    await user.click(within(sheet).getByRole('button', { name: /Upset at nap/ }));
+    await user.click(within(sheet).getByRole('button', { name: "💛 Call Mommy's avatar" }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/live/child');
+    expect(JSON.parse(screen.getByTestId('state').textContent!)).toMatchObject({ parentPhotoUrl: 'https://m/sarah.png' });
+  });
+
   it('shows the empty state when the classroom has no children', async () => {
     stub(roomsOf(ROOMS[0]), rosterOf());
     mount(teacherMe());

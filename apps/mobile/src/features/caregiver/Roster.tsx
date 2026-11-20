@@ -158,6 +158,7 @@ export function Roster() {
         childName: tile.name,
         caregiverName: acting?.teacherName ?? me.user.name,
         parentTitle: avatar.parentTitle,
+        parentPhotoUrl: avatar.photoUrl,
         returnTo: '/caregiver/done',
       },
     });

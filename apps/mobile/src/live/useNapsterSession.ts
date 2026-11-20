@@ -6,7 +6,8 @@ import { toast } from '../ui/toast';
 import { parseCaption, parseFlagCall, sdkErrorCode, type LiveEvent } from './events';
 import { useKeepAwake } from './keepAwake';
 import { preflightMic, type MicCheck } from './micPreflight';
-import { napsterSdk, type LiveCallbacks, type LiveCommand, type LiveInstance, type LiveSdk, type SdkStatus } from './sdk';
+import { napsterSdk, preloadNapsterSdk, type LiveCallbacks, type LiveCommand, type LiveInstance, type LiveSdk, type SdkStatus } from './sdk';
+import { liveMark } from './timing';
 import { initialMachine, sessionMachine, type EndReason, type Machine, type SessionEvent } from './sessionMachine';
 
 export interface StartResult {
@@ -208,9 +209,11 @@ export function useNapsterSession(opts: UseNapsterSessionOptions) {
       if (a.sessionId) await endOnServer(a, a.sessionId);
     }
     a.tokenUsed = true;
+    liveMark('creating session (our API + Napster connection)');
     let res: StartResult;
     try {
       res = await optsRef.current.start();
+      liveMark('session created');
     } catch (e) {
       failWith(a, codeOf(e));
       throw e;
@@ -293,6 +296,7 @@ export function useNapsterSession(opts: UseNapsterSessionOptions) {
     },
     onAvatarReady: (ready) => {
       if (!ready || att.current !== a) return;
+      liveMark('avatar ready');
       send({ type: 'AVATAR_READY', at: Date.now() });
       const sid = a.sessionId;
       if (a.contextSent || !sid) return;
@@ -301,6 +305,7 @@ export function useNapsterSession(opts: UseNapsterSessionOptions) {
     },
     onSessionStatusChange: (s) => {
       if (att.current !== a) return;
+      liveMark(`sdk status ${s}`);
       setSdkStatus(s);
       if (s === 'permissionBlocked' || s === 'permissionDismissed') failWith(a, 'MIC_BLOCKED');
     },
@@ -333,6 +338,8 @@ export function useNapsterSession(opts: UseNapsterSessionOptions) {
     if (st === 'connecting' || st === 'live' || st === 'ending') return;
     const container = containerRef.current;
     send({ type: 'START' });
+    liveMark('call tapped', { start: true });
+    if (!optsRef.current.sdk) void preloadNapsterSdk().catch(() => {});
     setSdkStatus(null);
     setMuted(false);
     const a: Attempt = {
@@ -358,6 +365,7 @@ export function useNapsterSession(opts: UseNapsterSessionOptions) {
       } finally {
         if (att.current === a) setMicPending(false);
       }
+      liveMark(`mic ${mic}`);
       if (over(a)) return null;
       if (mic === 'denied') {
         failWith(a, 'MIC_BLOCKED');

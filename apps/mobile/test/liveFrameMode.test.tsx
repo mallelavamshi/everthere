@@ -8,23 +8,14 @@ vi.mock('@capacitor/app', () => ({
 }));
 
 import { LiveSession } from '../src/live/LiveSession';
-import {
-  DEFAULT_FRAME_MODE,
-  FRAME_MODES,
-  FRAME_MODE_KEY,
-  LONG_PRESS_MS,
-  cropAspect,
-  loadFrameMode,
-  nextFrameMode,
-  saveFrameMode,
-} from '../src/live/frameMode';
+import { PHONE_FRAME, cropAspect } from '../src/live/frameMode';
 import type { LiveCallbacks, LiveSdk } from '../src/live/sdk';
 import { __resetLiveChainForTests } from '../src/live/useNapsterSession';
 import { toast } from '../src/ui';
 
-// Task 28 (experiment): on a portrait phone the avatar frame can be taller than the 16:9 stream. The video then
-// COVERS the frame, which crops only its left and right sides (never zooms past the full height). Long-press the frame
-// to cycle 16:9 -> 1:1 -> 4:5 -> 3:4; the choice persists. Landscape and tablets keep the 16:9 contain frame.
+// Task 28/31: on a portrait phone the avatar frame is 4:5, taller than the 16:9 stream. The video COVERS the frame,
+// which crops only its left and right sides (never zooms past the full height). The user tried 16:9, 1:1, 4:5 and 3:4
+// on their phone and kept 4:5, so the long-press switcher is gone. Landscape and tablets keep the 16:9 contain frame.
 
 function harness() {
   const h = { cb: null as (LiveCallbacks & { mountContainer: HTMLElement }) | null };
@@ -86,80 +77,25 @@ afterEach(() => {
   toast.clear();
 });
 
-describe('frame modes: cycle and persistence', () => {
-  it('cycles 16:9 -> 1:1 -> 4:5 -> 3:4 -> 16:9; the experiment build defaults to 4:5', () => {
-    expect(FRAME_MODES).toEqual(['16:9', '1:1', '4:5', '3:4']);
-    expect(DEFAULT_FRAME_MODE).toBe('4:5');
-    expect(nextFrameMode('16:9')).toBe('1:1');
-    expect(nextFrameMode('1:1')).toBe('4:5');
-    expect(nextFrameMode('4:5')).toBe('3:4');
-    expect(nextFrameMode('3:4')).toBe('16:9');
-    expect(LONG_PRESS_MS).toBe(600);
+describe('the phone frame is 4:5', () => {
+  it('cropAspect: 4:5 on a portrait phone, else the contain frame', () => {
+    expect(PHONE_FRAME).toBe('4:5');
+    expect(cropAspect(true)).toBe(0.8);
+    expect(cropAspect(false)).toBeNull();
   });
 
-  it('loads the default when nothing (or junk) is stored, and round-trips a saved mode', () => {
-    expect(loadFrameMode()).toBe('4:5');
-    localStorage.setItem(FRAME_MODE_KEY, '21:9');
-    expect(loadFrameMode()).toBe('4:5');
-    saveFrameMode('3:4');
-    expect(localStorage.getItem(FRAME_MODE_KEY)).toBe('3:4');
-    expect(loadFrameMode()).toBe('3:4');
-  });
-
-  it('storage that throws never breaks the call screen', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('denied');
-    });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('denied');
-    });
-    expect(loadFrameMode()).toBe('4:5');
-    expect(() => saveFrameMode('1:1')).not.toThrow();
-  });
-
-  it('cropAspect: a mode aspect only on a portrait phone, never for 16:9', () => {
-    expect(cropAspect('1:1', true)).toBe(1);
-    expect(cropAspect('4:5', true)).toBe(0.8);
-    expect(cropAspect('3:4', true)).toBe(0.75);
-    expect(cropAspect('16:9', true)).toBeNull();
-    expect(cropAspect('4:5', false)).toBeNull();
-  });
-});
-
-describe('the live frame per mode (portrait phone)', () => {
-  it('defaults to a 4:5 cropped frame with no intrinsic-width cap', async () => {
+  it('a portrait phone gets the 4:5 cropped frame with no intrinsic-width cap, whatever an old build stored', async () => {
+    localStorage.setItem('everthere.liveFrameMode', '16:9');
     await mount();
     expect(hero()).toHaveClass('is-crop');
     expect(hero()).toHaveAttribute('data-frame-mode', '4:5');
     expect(hero().style.getPropertyValue('--live-aspect')).toBe('0.8');
     expect(hero().style.getPropertyValue('--live-video-w')).toBe('');
   });
-
-  it.each([
-    ['1:1', '1'],
-    ['4:5', '0.8'],
-    ['3:4', '0.75'],
-  ])('%s: crop class and aspect %s', async (mode, aspect) => {
-    localStorage.setItem(FRAME_MODE_KEY, mode);
-    await mount();
-    expect(hero()).toHaveClass('is-crop');
-    expect(hero()).toHaveAttribute('data-frame-mode', mode);
-    expect(hero().style.getPropertyValue('--live-aspect')).toBe(aspect);
-  });
-
-  it('16:9 is the fitted contain frame: video aspect and the intrinsic-width cap', async () => {
-    localStorage.setItem(FRAME_MODE_KEY, '16:9');
-    await mount();
-    expect(hero()).not.toHaveClass('is-crop');
-    expect(hero()).toHaveAttribute('data-frame-mode', '16:9');
-    expect(hero().style.getPropertyValue('--live-aspect')).toBe(String(16 / 9));
-    expect(hero().style.getPropertyValue('--live-video-w')).toBe('1280px');
-  });
 });
 
 describe('portrait phones only', () => {
-  it('landscape keeps the 16:9 contain frame whatever the stored mode', async () => {
-    localStorage.setItem(FRAME_MODE_KEY, '3:4');
+  it('landscape keeps the 16:9 contain frame', async () => {
     mockMedia((q) => q.includes('landscape'));
     await mount();
     expect(hero()).not.toHaveClass('is-crop');
@@ -169,91 +105,30 @@ describe('portrait phones only', () => {
   });
 
   it('a tablet (min-width 700px) in portrait keeps the 16:9 contain frame', async () => {
-    localStorage.setItem(FRAME_MODE_KEY, '1:1');
     mockMedia((q) => q.includes('min-width: 700px'));
     await mount();
     expect(hero()).not.toHaveClass('is-crop');
     expect(hero().style.getPropertyValue('--live-aspect')).toBe(String(16 / 9));
   });
-
-  it('long-press does nothing in landscape (no hidden mode change, no toast)', async () => {
-    mockMedia((q) => q.includes('landscape'));
-    await mount();
-    const info = vi.spyOn(toast, 'info');
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS + 100));
-    expect(info).not.toHaveBeenCalled();
-    expect(localStorage.getItem(FRAME_MODE_KEY)).toBeNull();
-  });
 });
 
-describe('long-press the frame to switch modes', () => {
-  it('about 600 ms cycles to the next mode, persists it and shows a toast', async () => {
+describe('no hidden frame switcher', () => {
+  it('a long press on the frame changes nothing and shows no toast', async () => {
     await mount();
     const info = vi.spyOn(toast, 'info');
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS - 1));
-    expect(hero()).toHaveAttribute('data-frame-mode', '4:5');
-    act(() => vi.advanceTimersByTime(1));
-    expect(hero()).toHaveAttribute('data-frame-mode', '3:4');
-    expect(hero().style.getPropertyValue('--live-aspect')).toBe('0.75');
-    expect(localStorage.getItem(FRAME_MODE_KEY)).toBe('3:4');
-    expect(info).toHaveBeenCalledWith('Frame 3:4', expect.anything());
-    fireEvent.pointerUp(frame());
-    // Holding on does not keep cycling; the next long-press goes on to 16:9 (the contain frame).
-    fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS));
-    expect(hero()).toHaveAttribute('data-frame-mode', '16:9');
-    expect(hero()).not.toHaveClass('is-crop');
-    expect(info).toHaveBeenLastCalledWith('Frame 16:9', expect.anything());
-  });
-
-  it('a short tap does nothing', async () => {
-    await mount();
-    const info = vi.spyOn(toast, 'info');
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    act(() => vi.advanceTimersByTime(200));
-    fireEvent.pointerUp(frame());
     act(() => vi.advanceTimersByTime(2000));
+    fireEvent.pointerUp(frame());
     expect(hero()).toHaveAttribute('data-frame-mode', '4:5');
     expect(info).not.toHaveBeenCalled();
   });
 
-  it('moving the finger, or the pointer being cancelled, aborts the long-press', async () => {
-    await mount();
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(frame(), { clientX: 100, clientY: 130 });
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS * 2));
-    expect(hero()).toHaveAttribute('data-frame-mode', '4:5');
-    fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    fireEvent.pointerCancel(frame());
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS * 2));
-    expect(hero()).toHaveAttribute('data-frame-mode', '4:5');
-  });
-
-  it('a long-press on a dock button never switches the frame', async () => {
-    await mount();
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const mute = screen.getByRole('button', { name: /microphone/i });
-    fireEvent.pointerDown(mute, { clientX: 10, clientY: 700 });
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS * 2));
-    expect(hero()).toHaveAttribute('data-frame-mode', '4:5');
-  });
-
-  it("the frame suppresses the context menu (Android's long-press menu)", async () => {
-    await mount();
-    expect(fireEvent.contextMenu(frame())).toBe(false);
-  });
-
-  it('CSS: the frame is not selectable and has no touch callout', () => {
+  it('CSS: the frame is not selectable, has no touch callout, and does not block touches', () => {
     const f = rule('.live-frame');
     expect(f).toMatch(/user-select:\s*none/);
-    expect(f).toMatch(/-webkit-user-select:\s*none/);
     expect(f).toMatch(/-webkit-touch-callout:\s*none/);
+    expect(f).not.toMatch(/touch-action/);
   });
 });
 
@@ -274,7 +149,7 @@ describe('crop CSS', () => {
 });
 
 describe('the mic-permission stage is not affected', () => {
-  it('while the SDK asks for the mic the hero is not cropped and long-press is off; the crop returns after', async () => {
+  it('while the SDK asks for the mic the hero is not cropped; the crop returns after', async () => {
     const { h } = await mount();
     expect(hero()).toHaveClass('is-crop');
     await act(async () => {
@@ -282,12 +157,6 @@ describe('the mic-permission stage is not affected', () => {
     });
     expect(screen.getByTestId('live-stage')).toHaveClass('is-permission');
     expect(hero()).not.toHaveClass('is-crop');
-    const info = vi.spyOn(toast, 'info');
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    fireEvent.pointerDown(frame(), { clientX: 100, clientY: 100 });
-    act(() => vi.advanceTimersByTime(LONG_PRESS_MS * 2));
-    expect(info).not.toHaveBeenCalled();
-    vi.useRealTimers();
     await act(async () => {
       h.cb!.onSessionStatusChange?.('loading');
     });

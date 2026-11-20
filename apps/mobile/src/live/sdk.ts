@@ -1,5 +1,6 @@
 import type { NapsterCompanionApiConfig, NapsterCompanionApiInstance } from '@touchcastllc/napster-companion-api';
 import type { LiveEvent } from './events';
+import { liveMark } from './timing';
 
 // A thin adapter over the Napster Companion SDK, so the hook can run against the real SDK, the DEV fake
 // (fakeSdk.ts) or a unit-test double. Shapes follow docs/notes/napster-events.md.
@@ -90,11 +91,29 @@ export function ensureMediaSessionShim(): void {
   }
 }
 
+type SdkModule = typeof import('@touchcastllc/napster-companion-api');
+let sdkModule: Promise<SdkModule> | null = null;
+
+/**
+ * Start loading the SDK bundle now (task 31): the call screen kicks this off at the tap, so it loads while the mic
+ * check runs instead of after it. A failed load is forgotten so the next call tries again.
+ */
+export function preloadNapsterSdk(): Promise<SdkModule> {
+  if (!sdkModule) {
+    sdkModule = import('@touchcastllc/napster-companion-api');
+    sdkModule.catch(() => {
+      sdkModule = null;
+    });
+  }
+  return sdkModule;
+}
+
 /** The real SDK, loaded on first use so its bundle stays out of the start-up chunk. */
 export const napsterSdk: LiveSdk = {
   async init(getToken, { mountContainer, ...cb }) {
     ensureMediaSessionShim();
-    const { NapsterCompanionApiSdk } = await import('@touchcastllc/napster-companion-api');
+    const { NapsterCompanionApiSdk } = await preloadNapsterSdk();
+    liveMark('sdk bundle ready');
     const inst: NapsterCompanionApiInstance = await NapsterCompanionApiSdk.init(getToken, napsterConfig(mountContainer, cb));
     return {
       destroy: () => inst.destroy(),

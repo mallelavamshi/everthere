@@ -50,7 +50,7 @@ export function TestAndApprove({ avatarId, home = '/parent' }: TestAndApprovePro
 
   const startCall = () => {
     if (!a) return;
-    navigate('/live/test', { state: { avatarId, parentTitle: a.parentTitle, returnTo: location.pathname } });
+    navigate('/live/test', { state: { avatarId, parentTitle: a.parentTitle, parentPhotoUrl: a.photoUrl ?? undefined, returnTo: location.pathname } });
   };
 
   if (q.isError) {

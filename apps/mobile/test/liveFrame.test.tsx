@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,6 @@ import { LiveSession, type LiveSessionProps } from '../src/live/LiveSession';
 import { Captions } from '../src/live/parts/Captions';
 import type { LiveCallbacks, LiveSdk } from '../src/live/sdk';
 import { __resetLiveChainForTests } from '../src/live/useNapsterSession';
-import { FRAME_MODE_KEY } from '../src/live/frameMode';
 import { TRANSPARENT_POSTER, videoFrame } from '../src/live/videoFrame';
 
 // Device test P-3 (as re-specified): the avatar frame takes the VIDEO's own aspect ratio (16:9 until the SDK's
@@ -107,9 +106,11 @@ describe('videoFrame', () => {
   });
 });
 
-// Task 28: a portrait phone defaults to a crop mode (liveFrameMode.test.tsx); these cover the 16:9 contain frame.
+// A portrait phone gets the 4:5 crop frame (liveFrameMode.test.tsx); on a tablet these cover the 16:9 contain frame.
 describe('live avatar frame (P-3)', () => {
-  beforeEach(() => localStorage.setItem(FRAME_MODE_KEY, '16:9'));
+  beforeEach(() => {
+    window.matchMedia = ((q: string) => ({ ...realMatchMedia(q), media: q, matches: q.includes('min-width: 700px') })) as typeof window.matchMedia;
+  });
 
   it('is 16:9 until the video reports its size, then takes the real aspect and caps at its intrinsic width', async () => {
     const { h } = await mount();
@@ -430,5 +431,61 @@ describe('caption whitespace (task 26c round 2)', () => {
   it('blank lines and whitespace runs in a caption collapse to single spaces', () => {
     render(<Captions captions={[{ id: 'a1', role: 'avatar', text: 'Here we go:\n\n  Twinkle, twinkle,\n little   star' }]} />);
     expect(screen.getByTestId('caption').textContent).toBe('Here we go: Twinkle, twinkle, little star');
+  });
+});
+
+describe("dialing shows the parent's face (task 31)", () => {
+  const PHOTO = 'https://media.example/m/avatar.png?sig=1';
+  const face = () => screen.queryByTestId('live-dialing-face');
+  const appendVideo = async () => {
+    const v = document.createElement('video');
+    v.className = 'np_companion-avatar-video';
+    await act(async () => {
+      screen.getByTestId('avatar-container').appendChild(v);
+      await Promise.resolve();
+    });
+    return v;
+  };
+
+  it('while connecting, the frame shows the parent photo with "Calling Mom…"', async () => {
+    await mount({ parentPhotoUrl: PHOTO });
+    expect(face()).toHaveAttribute('src', PHOTO);
+    expect(screen.getByText('Calling Mom…')).toBeInTheDocument();
+  });
+
+  it('the face stays after the avatar is ready, until the video is actually playing (no blank frame)', async () => {
+    const { h } = await mount({ parentPhotoUrl: PHOTO });
+    const v = await appendVideo();
+    await goLive(h);
+    expect(screen.getByTestId('live-session').dataset.state).toBe('live');
+    expect(face()).not.toBeNull();
+    await act(async () => {
+      v.dispatchEvent(new Event('playing'));
+    });
+    // It fades out (framer exit), then is gone.
+    await waitFor(() => expect(face()).toBeNull());
+  });
+
+  it('without a photo, or when it fails to load, the spinner shows instead', async () => {
+    await mount();
+    expect(face()).toBeNull();
+    expect(screen.getByText('Calling Mom…')).toBeInTheDocument();
+  });
+
+  it('an image error falls back quietly to the spinner', async () => {
+    await mount({ parentPhotoUrl: PHOTO });
+    await act(async () => {
+      face()!.dispatchEvent(new Event('error'));
+    });
+    await waitFor(() => expect(face()).toBeNull());
+    expect(screen.getByText('Calling Mom…')).toBeInTheDocument();
+  });
+
+  it('never under the SDK mic card', async () => {
+    const { h } = await mount({ parentPhotoUrl: PHOTO });
+    await act(async () => {
+      h.cb!.onSessionStatusChange?.('permissionPending');
+    });
+    await waitFor(() => expect(face()).toBeNull());
   });
 });
