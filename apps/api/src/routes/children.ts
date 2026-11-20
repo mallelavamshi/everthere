@@ -12,7 +12,16 @@ import { MEDIA_URL_TTL_MS, signMediaUrl } from './media';
 
 type ChildRow = { id: string; family_id: string; name: string; photo_key: string | null; birthday: string | null; timezone: string };
 
-type FamilyAvatar = { avatarId: string; ownerUserId: string; ownerName: string; parentTitle: string; status: string; isMine: boolean };
+type FamilyAvatar = {
+  avatarId: string;
+  ownerUserId: string;
+  ownerName: string;
+  parentTitle: string;
+  status: string;
+  isMine: boolean;
+  /** The avatar's own face, signed for 1 hour; omitted without a photo. Never the raw key. */
+  photoUrl?: string;
+};
 
 const photoUrlOf = async (env: Env, r: ChildRow) => (r.photo_key ? { photoUrl: await signMediaUrl(env, r.photo_key, MEDIA_URL_TTL_MS) } : {});
 
@@ -20,20 +29,23 @@ const photoUrlOf = async (env: Env, r: ChildRow) => (r.photo_key ? { photoUrl: a
 async function familyAvatarsOf(env: Env, familyId: string, userId: string): Promise<FamilyAvatar[]> {
   const { results } = await env.DB
     .prepare(
-      `SELECT a.id, a.user_id, u.name, a.parent_title, a.status
+      `SELECT a.id, a.user_id, u.name, a.parent_title, a.status, a.photo_key
        FROM avatar a JOIN family_member fm ON fm.user_id = a.user_id JOIN user u ON u.id = a.user_id
        WHERE fm.family_id = ? ORDER BY a.id`,
     )
     .bind(familyId)
-    .all<{ id: string; user_id: string; name: string; parent_title: string; status: string }>();
-  return results.map((a) => ({
-    avatarId: a.id,
-    ownerUserId: a.user_id,
-    ownerName: a.name,
-    parentTitle: a.parent_title,
-    status: a.status,
-    isMine: a.user_id === userId,
-  }));
+    .all<{ id: string; user_id: string; name: string; parent_title: string; status: string; photo_key: string | null }>();
+  return Promise.all(
+    results.map(async (a) => ({
+      avatarId: a.id,
+      ownerUserId: a.user_id,
+      ownerName: a.name,
+      parentTitle: a.parent_title,
+      status: a.status,
+      isMine: a.user_id === userId,
+      ...(a.photo_key ? { photoUrl: await signMediaUrl(env, a.photo_key, MEDIA_URL_TTL_MS) } : {}),
+    })),
+  );
 }
 
 const full = async (env: Env, r: ChildRow, userId: string) => ({

@@ -1,4 +1,4 @@
-import type { Voice } from '@everthere/shared';
+import { isCustomVoice, VOICES, type Voice } from '@everthere/shared';
 
 /** Friendly, human descriptors for the ten voices (the cards are a pick-a-personality, not a raw list). */
 export const VOICE_INFO: Record<Voice, { label: string; descriptor: string; emoji: string }> = {
@@ -14,8 +14,13 @@ export const VOICE_INFO: Record<Voice, { label: string; descriptor: string; emoj
   cedar: { label: 'Cedar', descriptor: 'Deep & cozy', emoji: '🪵' },
 };
 
-export const voiceLabel = (id: string): string => VOICE_INFO[id as Voice]?.label ?? id;
-export const voiceDescriptor = (id: string): string => VOICE_INFO[id as Voice]?.descriptor ?? '';
+/** A digital twin's own cloned voice (`custom:<id>`), shown by what it is, never by its raw id. */
+export const OWN_VOICE = { label: 'Your own voice ✨', descriptor: 'Cloned from your own recording' } as const;
+
+export const voiceLabel = (id: string): string => (isCustomVoice(id) ? OWN_VOICE.label : (VOICE_INFO[id as Voice]?.label ?? id));
+export const voiceDescriptor = (id: string): string => (isCustomVoice(id) ? OWN_VOICE.descriptor : (VOICE_INFO[id as Voice]?.descriptor ?? ''));
+/** The stock voice to preselect in the voice picker, or undefined (a custom voice is not in the list). */
+export const stockVoice = (id: string | null | undefined): Voice | undefined => ((VOICES as readonly string[]).includes(id ?? '') ? (id as Voice) : undefined);
 
 /**
  * Preview clips are optional: a play button exists only for a voice whose file is in src/assets/voices/<voice>.m4a.

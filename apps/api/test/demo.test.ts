@@ -269,6 +269,34 @@ describe('PUT /api/admin/seed', () => {
     expect(await one('SELECT emoji FROM classroom WHERE id = ?', ROOM)).toEqual({ emoji: 'asset:butterflies' });
   });
 
+  it("records a real person's own digital twin truthfully (not synthetic) and keeps a custom cloned voice", async () => {
+    const s = setup();
+    const f = fixture();
+    f.avatars![1] = { ...f.avatars![1]!, voiceId: 'custom:5edcdc24-1ebc-487c-b631-4ac6275aebf1', likeness: { kind: 'self', ownerName: 'Vamshi Krishna' } };
+    await seed(s, f);
+    expect(await one('SELECT is_synthetic, consent_name, voice_id FROM avatar WHERE id = ?', AV_D)).toEqual({
+      is_synthetic: 0,
+      consent_name: "Vamshi Krishna (self: the account owner's own likeness and voice, consented by the owner)",
+      voice_id: 'custom:5edcdc24-1ebc-487c-b631-4ac6275aebf1',
+    });
+    // Every other avatar keeps the synthetic record; the nightly reset keeps the avatar as seeded.
+    expect(await one('SELECT is_synthetic, consent_name FROM avatar WHERE id = ?', AV_S)).toEqual({ is_synthetic: 1, consent_name: 'AI-generated face, no real person' });
+    await resetDemoWorld(s.e);
+    expect(await one('SELECT is_synthetic, voice_id FROM avatar WHERE id = ?', AV_D)).toEqual({ is_synthetic: 0, voice_id: 'custom:5edcdc24-1ebc-487c-b631-4ac6275aebf1' });
+    // The owner's avatar view shows the custom voice id as is (the app labels it "Your own voice").
+    const mine = (await (await s.request('/api/avatars/mine', { headers: authAs(U.david) })).json()) as { voiceId: string; consentName: string }[];
+    expect(mine[0]).toMatchObject({ voiceId: 'custom:5edcdc24-1ebc-487c-b631-4ac6275aebf1', consentName: expect.stringContaining('self') });
+  });
+
+  it('rejects a voice that is neither a stock voice nor custom:<id>', async () => {
+    const s = setup();
+    const f = fixture();
+    f.avatars![1] = { ...f.avatars![1]!, voiceId: 'nova' as never };
+    expect(await errCode(await s.request('/api/admin/seed', admin('PUT', f)))).toBe('INVALID');
+    f.avatars![1] = { ...f.avatars![1]!, voiceId: 'custom:bad id!' as never };
+    expect(await errCode(await s.request('/api/admin/seed', admin('PUT', f)))).toBe('INVALID');
+  });
+
   it('gives the demo staff their PINs, hashed (Jess 1234, Tanya 2468), so the tablet PIN switch can be demoed', async () => {
     const s = setup();
     await seed(s);

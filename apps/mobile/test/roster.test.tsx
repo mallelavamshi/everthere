@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -166,6 +166,45 @@ describe('Roster tiles', () => {
     expect(await screen.findByRole('dialog', { name: /What's going on with Leo/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: "💛 Call Daddy's avatar" })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Missing Daddy/ })).toBeInTheDocument();
+  });
+
+  it("the AvatarPicker shows each parent's own face instead of the child photo, and falls back quietly", async () => {
+    const withFaces = tile({
+      name: 'Leo',
+      photoUrl: 'https://m/child-leo.png',
+      readyAvatars: [
+        { avatarId: 'a-leo-1', parentTitle: 'Mommy', parentName: 'Sarah', photoUrl: 'https://m/mommy.png' },
+        { avatarId: 'a-leo-2', parentTitle: 'Daddy', parentName: 'Dan', photoUrl: 'https://m/daddy.png' },
+      ],
+    });
+    stub(roomsOf(ROOMS[0]), rosterOf(withFaces));
+    const user = userEvent.setup();
+    mount(teacherMe());
+    await user.click(await screen.findByRole('button', { name: /Leo/ }));
+    const picker = await screen.findByRole('dialog', { name: /Who should Leo talk to/ });
+    const daddy = within(picker).getByRole('button', { name: 'Call Daddy' });
+    const mommy = within(picker).getByRole('button', { name: 'Call Mommy' });
+    expect(daddy.querySelector('img')).toHaveAttribute('src', 'https://m/daddy.png');
+    expect(mommy.querySelector('img')).toHaveAttribute('src', 'https://m/mommy.png');
+    expect(daddy.textContent).toBe('💛 Call Daddy');
+    // The child's photo is no longer the picture on top of the sheet.
+    expect(picker.querySelector('img[src="https://m/child-leo.png"]')).toBeNull();
+    // An expired parent link falls back to the child's photo, then to nothing broken.
+    fireEvent.error(daddy.querySelector('img')!);
+    expect(daddy.querySelector('img')).toHaveAttribute('src', 'https://m/child-leo.png');
+    await user.click(daddy);
+    expect(await screen.findByRole('dialog', { name: /What's going on with Leo/ })).toBeInTheDocument();
+  });
+
+  it('the AvatarPicker keeps the child photo on top when no parent has a face', async () => {
+    stub(roomsOf(ROOMS[0]), rosterOf(tile({ ...LEO, photoUrl: 'https://m/child-leo.png' })));
+    const user = userEvent.setup();
+    mount(teacherMe());
+    await user.click(await screen.findByRole('button', { name: /Leo/ }));
+    const picker = await screen.findByRole('dialog', { name: /Who should Leo talk to/ });
+    expect(picker.querySelectorAll('img')).toHaveLength(1);
+    expect(picker.querySelector('img')).toHaveAttribute('src', 'https://m/child-leo.png');
+    expect(within(picker).getByRole('button', { name: 'Call Daddy' }).querySelector('img')).toBeNull();
   });
 
   it('one ready avatar goes straight to the ReasonSheet; the call opens /live/child with the route state', async () => {

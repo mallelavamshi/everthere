@@ -26,6 +26,8 @@ export interface FamilyAvatarView {
   parentTitle: string;
   status: string;
   isMine: boolean;
+  /** The avatar's own face, a signed media URL (1 hour). Omitted when the avatar has no photo. */
+  photoUrl?: string;
 }
 
 /**
@@ -127,6 +129,8 @@ export interface ReadyAvatarView {
   avatarId: string;
   parentTitle: string;
   parentName?: string;
+  /** The parent avatar's own face, a signed media URL (1 hour). Omitted when the avatar has no photo. */
+  photoUrl?: string;
 }
 
 /** GET /api/caregiver/children: a home caregiver's children, shaped like a roster tile. */

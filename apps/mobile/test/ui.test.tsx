@@ -408,6 +408,24 @@ describe('small pieces', () => {
   });
 });
 
+describe('Avatar fallbackSrc', () => {
+  it('tries src, then fallbackSrc, then the emoji, quietly (an expired signed URL never shows a broken image)', () => {
+    const { container } = render(<Avatar src="https://m/parent.png" fallbackSrc="https://m/child.png" emoji="💛" name="Daddy" />);
+    const img = () => container.querySelector('img');
+    expect(img()).toHaveAttribute('src', 'https://m/parent.png');
+    fireEvent.error(img()!);
+    expect(img()).toHaveAttribute('src', 'https://m/child.png');
+    fireEvent.error(img()!);
+    expect(img()).toBeNull();
+    expect(screen.getByRole('img', { name: 'Daddy' })).toHaveTextContent('💛');
+  });
+
+  it('uses fallbackSrc straight away when there is no src', () => {
+    const { container } = render(<Avatar fallbackSrc="https://m/child.png" />);
+    expect(container.querySelector('img')).toHaveAttribute('src', 'https://m/child.png');
+  });
+});
+
 describe('theme tokens', () => {
   it('body text meets WCAG AA (4.5:1) on cream', () => {
     expect(contrast(colors.ink, colors.cream)).toBeGreaterThanOrEqual(4.5);

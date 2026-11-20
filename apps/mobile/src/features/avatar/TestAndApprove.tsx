@@ -12,6 +12,7 @@ import { InlineError } from '../onboarding/Step';
 import { approveAvatar, fetchAvatar } from './avatarApi';
 import { Confetti } from './Confetti';
 import { voiceLabel } from './voices';
+import { isCustomVoice } from '@everthere/shared';
 
 export interface TestAndApproveProps {
   avatarId: string;
@@ -95,7 +96,8 @@ export function TestAndApprove({ avatarId, home = '/parent' }: TestAndApprovePro
           <Illustration asset="moment.testCall" size={200} priority />
           <h1 className="text-[26px] font-semibold leading-tight">Time for a test call 📞</h1>
           <p className="max-w-[20rem] text-[16px] leading-relaxed text-mutedText">
-            Say hello to your avatar! You'll hear the {voiceLabel(a.voiceId)} voice and see how it will meet your little one.
+            Say hello to your avatar! You'll hear {isCustomVoice(a.voiceId) ? 'your own voice' : `the ${voiceLabel(a.voiceId)} voice`} and see how it will meet
+            your little one.
           </p>
           <Button size="lg" icon="🎥" haptic onClick={startCall}>
             Start test call

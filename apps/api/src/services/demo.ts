@@ -1,4 +1,4 @@
-import { DemoFixture, SYNTHETIC_CONSENT_NAME, todayNoteExpiry } from '@everthere/shared';
+import { DemoFixture, SYNTHETIC_CONSENT_NAME, selfConsentName, todayNoteExpiry } from '@everthere/shared';
 import type { Env } from '../env';
 import { apiError } from '../http';
 import { hashPin } from '../auth/acting';
@@ -100,7 +100,10 @@ function userStmts(env: E, f: DemoFixture): Stmt[] {
   return out;
 }
 
-/** The synthetic avatars (seed only: the nightly reset keeps avatars as they are). */
+/**
+ * The demo avatars (seed only: the nightly reset keeps avatars as they are). AI-generated faces are recorded as
+ * synthetic; an avatar marked `likeness: self` is the account owner's own digital twin and is recorded as such.
+ */
 function avatarStmts(env: E, f: DemoFixture): Stmt[] {
   return f.avatars.map((a) =>
     upsert(
@@ -115,9 +118,9 @@ function avatarStmts(env: E, f: DemoFixture): Stmt[] {
         photo_key: a.photoKey,
         status: 'approved',
         approved_at: a.consentAt,
-        consent_name: SYNTHETIC_CONSENT_NAME,
+        consent_name: a.likeness ? selfConsentName(a.likeness.ownerName) : SYNTHETIC_CONSENT_NAME,
         consent_at: a.consentAt,
-        is_synthetic: 1,
+        is_synthetic: a.likeness ? 0 : 1,
         parent_title: a.parentTitle,
         created_at: a.consentAt,
       },

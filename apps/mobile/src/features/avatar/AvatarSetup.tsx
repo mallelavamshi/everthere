@@ -10,6 +10,7 @@ import { qk, useAvatar, useChildren } from '../../lib/queries';
 import { EmptyState, Field, Screen } from '../../ui';
 import { useSession } from '../../shell/SessionContext';
 import { changePhoto, changeVoice, createAvatar, uploadMedia } from './avatarApi';
+import { stockVoice } from './voices';
 import { ConsentStep } from './ConsentStep';
 import { PhotoStep } from './PhotoStep';
 import { VoiceStep } from './VoiceStep';
@@ -149,7 +150,7 @@ export function AvatarSetup({ intent }: { intent: SetupIntent }) {
         element={
           intent === 'voice' ? (
             <VoiceStep
-              value={voice ?? ((existing?.voiceId as Voice | undefined) ?? null)}
+              value={voice ?? stockVoice(existing?.voiceId) ?? null}
               onChange={setVoice}
               steps={null}
               busy={busy}
@@ -157,7 +158,7 @@ export function AvatarSetup({ intent }: { intent: SetupIntent }) {
               ctaLabel="Save this voice"
               onBack={() => navigate(leave)}
               onNext={() => {
-                const v = voice ?? (existing?.voiceId as Voice | undefined);
+                const v = voice ?? stockVoice(existing?.voiceId);
                 if (existing && v) void run(() => changeVoice(existing.id, v));
               }}
             />

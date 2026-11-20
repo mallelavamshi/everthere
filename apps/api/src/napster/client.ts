@@ -142,7 +142,11 @@ export function napster(apiKey: string, opts: NapsterOptions = {}) {
     createAgent: (b: {
       companionId: string;
       name: string;
-      voiceId: string; // required: 400 VoiceIdRequired without it (notes 6.4)
+      /**
+       * Required for stock and custom companions (400 VoiceIdRequired without it, notes 6.4). Omitted only for a digital
+       * twin, which then speaks with its own cloned voice (Napster docs, Agent Configuration > Voice).
+       */
+      voiceId?: string;
       language?: string;
       providerSettings: ProviderSettings;
       functions?: string[];

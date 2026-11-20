@@ -389,6 +389,21 @@ describe('MyAvatar', () => {
     expect(await screen.findByText('retake flow')).toBeInTheDocument();
   });
 
+  it("labels a digital twin's own cloned voice instead of showing its raw id", async () => {
+    stubApi([avatar({ voiceId: 'custom:5edcdc24-1ebc-487c-b631-4ac6275aebf1', consentName: 'Vamshi Krishna (self: ...)' })]);
+    render(
+      <Shell at="/parent/avatar" isDemo>
+        <Routes>
+          <Route path="/parent/avatar" element={<MyAvatar />} />
+        </Routes>
+      </Shell>,
+    );
+    expect(await screen.findByText('Your own voice ✨')).toBeInTheDocument();
+    expect(screen.getByText('Cloned from your own recording')).toBeInTheDocument();
+    expect(screen.queryByText(/custom:/)).toBeNull();
+    expect(screen.queryByText(/AI-generated/)).toBeNull();
+  });
+
   it('hides the edit actions for a demo account', async () => {
     stubApi([avatar()]);
     render(

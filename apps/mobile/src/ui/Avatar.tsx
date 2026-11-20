@@ -3,6 +3,8 @@ import clsx from 'clsx';
 
 export interface AvatarProps {
   src?: string;
+  /** Tried when `src` is missing or fails to load (e.g. a parent's face falling back to the child's photo). */
+  fallbackSrc?: string;
   emoji?: string;
   /** Accessible name. Omit for a decorative avatar. */
   name?: string;
@@ -11,11 +13,12 @@ export interface AvatarProps {
   className?: string;
 }
 
-export function Avatar({ src, emoji, name, size = 48, ring, className }: AvatarProps) {
-  // A signed photo URL can expire (or fail to load): fall back to the emoji / initial quietly, never a broken-image icon.
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
-  const shown = src && !failed ? src : undefined;
+export function Avatar({ src, fallbackSrc, emoji, name, size = 48, ring, className }: AvatarProps) {
+  // A signed photo URL can expire (or fail to load): try the fallback photo, then the emoji / initial, quietly, never a
+  // broken-image icon.
+  const [failed, setFailed] = useState<string[]>([]);
+  useEffect(() => setFailed([]), [src, fallbackSrc]);
+  const shown = [src, fallbackSrc].find((u): u is string => !!u && !failed.includes(u));
   const a11y = name ? { role: 'img' as const, 'aria-label': name } : { 'aria-hidden': true as const };
   return (
     <span
@@ -29,7 +32,7 @@ export function Avatar({ src, emoji, name, size = 48, ring, className }: AvatarP
       )}
     >
       {shown ? (
-        <img src={shown} alt="" width={size} height={size} loading="lazy" onError={() => setFailed(true)} className="h-full w-full object-cover" />
+        <img src={shown} alt="" width={size} height={size} loading="lazy" onError={() => setFailed((f) => [...f, shown])} className="h-full w-full object-cover" />
       ) : emoji ? (
         <span aria-hidden="true">{emoji}</span>
       ) : (

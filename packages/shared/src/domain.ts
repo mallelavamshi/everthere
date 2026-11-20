@@ -14,6 +14,15 @@ export type Tone = 'calm' | 'playful' | 'soothing';
 export const VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar'] as const;
 export type Voice = (typeof VOICES)[number];
 
+/**
+ * A digital twin's own cloned voice, stored as `custom:<Napster customVoices[].id>` (not a stock voice, so it can't be
+ * picked in the app). Napster's agent then carries no stock voiceId: a twin speaks with the voice cloned at creation.
+ */
+export const CUSTOM_VOICE_PREFIX = 'custom:';
+export const CUSTOM_VOICE_RE = /^custom:[A-Za-z0-9_-]{1,64}$/;
+export const customVoice = (napsterCustomVoiceId: string): string => `${CUSTOM_VOICE_PREFIX}${napsterCustomVoiceId}`;
+export const isCustomVoice = (v: string | null | undefined): boolean => typeof v === 'string' && CUSTOM_VOICE_RE.test(v);
+
 export type MoodAfter = 'calmer' | 'same' | 'upset';
 
 export const FLAG_CATEGORIES = ['injury', 'illness', 'hurt_by_someone', 'scared_of_person', 'unsafe', 'other'] as const;

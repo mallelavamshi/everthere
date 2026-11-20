@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FLAG_CATEGORIES, SEVERITIES, VOICES } from './domain';
+import { CUSTOM_VOICE_RE, FLAG_CATEGORIES, SEVERITIES, VOICES } from './domain';
 import { ianaZone, isoDate } from './schemas';
 
 // Demo world + admin (Task 15). Shared by the API (validation) and scripts/seed (fixture builder).
@@ -18,6 +18,10 @@ export const DEMO_EMAIL_SUFFIX = '.demo@everthere.app';
 
 /** The consent name recorded for every seeded (AI-generated) demo face. */
 export const SYNTHETIC_CONSENT_NAME = 'AI-generated face, no real person';
+
+/** The consent name for a demo avatar that is the account owner's own digital twin (a real person, `is_synthetic` 0). */
+export const selfConsentName = (ownerName: string): string =>
+  `${ownerName} (self: the account owner's own likeness and voice, consented by the owner)`;
 
 const fxId = z.string().min(1).max(64);
 const fxTs = z.number().int().nonnegative();
@@ -49,10 +53,13 @@ const FxAvatar = z.object({
   userId: fxId,
   napsterCompanionId: fxId,
   napsterAgentId: fxId,
-  voiceId: z.enum(VOICES),
+  /** A stock voice, or `custom:<id>` for a digital twin's own cloned voice. */
+  voiceId: z.union([z.enum(VOICES), z.string().regex(CUSTOM_VOICE_RE)]),
   photoKey: fxKey,
   parentTitle: fxText(20),
   consentAt: fxTs,
+  /** Absent: an AI-generated face (synthetic). `self`: the account owner's own likeness and voice. */
+  likeness: z.object({ kind: z.literal('self'), ownerName: fxText(80) }).optional(),
 });
 const FxPlan = z.object({
   childId: fxId,
