@@ -118,6 +118,23 @@
   aspect-ratio: var(--live-aspect, 1.7778);
   width: min(100cqw, calc(100cqh * var(--live-aspect, 1.7778)), var(--live-video-w, 1280px));
 }
+/*
+ * Task 28 (experiment, portrait phones only; live/frameMode.ts). A crop mode (1:1, 4:5, 3:4) sets --live-aspect to
+ * the mode and the video COVERS the frame (rule below the SDK video rule): it keeps the stream's full height and cuts
+ * only its left and right sides. The frame is as large as fits the stage, with no intrinsic-width cap: its height is at
+ * most the stage's, so the visible 720 source rows are shown at about 1.5-1.8x in device px on a phone.
+ */
+.live-hero.is-crop {
+  width: min(100cqw, calc(100cqh * var(--live-aspect, 0.8)));
+}
+/* Long-press the frame to switch modes: no text selection, no callout or context menu (LiveSession suppresses it),
+   and the browser never claims the touch for a pan (the call screen does not scroll). */
+.live-frame {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
 /* Portrait: a band between the stage and the controls. It reserves room for the two clamped bubbles (avatar 3 lines,
    child 2) in em, so the reservation grows with the system font size (Android text zoom scales it like the captions),
    and it may grow past that: the stage (flex 1 1 0, min-height 0) gives way, so the latest caption is never clipped
@@ -291,6 +308,14 @@
   height: 100%;
   object-fit: contain;
   object-position: 50% 50%;
+}
+/* Crop modes only (task 28): cover the taller frame. The 16:9 stream is wider than every crop aspect, so cover scales
+   it to the frame's height and trims the sides equally; the head (top of frame to about 78% down, centred) stays.
+   35% only matters for a stream taller than the frame: it keeps the upper part, where the face is. */
+.live-hero.is-crop .et-avatar-host video.np_companion-avatar-video,
+.live-hero.is-crop .et-avatar-host canvas.np_companion-avatar-canvas {
+  object-fit: cover;
+  object-position: 50% 35%;
 }
 /* Invisible until the stream has a frame (live/videoFrame.ts): no poster, no WebView placeholder. Never display:none. */
 .et-avatar-host video[data-et-waiting] {

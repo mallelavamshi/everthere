@@ -12,6 +12,7 @@ import { EndCard, FullScreen, LiveError } from './parts/FullScreens';
 import { FlagSheet, VolumeSheet } from './parts/Sheets';
 import type { LiveSdk } from './sdk';
 import { useNapsterSession, type LiveRequest, type StartResult, type UseNapsterSessionOptions } from './useNapsterSession';
+import { cropAspect, useFrameMode, useLongPress, usePortraitPhone } from './frameMode';
 import { useLandscape, useVideoFrame } from './videoFrame';
 
 export { FLAG_LABELS } from './parts/Sheets';
@@ -151,7 +152,20 @@ export function LiveSession(props: LiveSessionProps) {
   const rootStyle = { background: gradients.sunset, '--caption-scrim': gradients.captionScrim } as CSSProperties;
   // P-3: the frame takes the video's own aspect ratio and never grows past its intrinsic width.
   const frame = useVideoFrame(s.containerRef);
-  const heroStyle = { '--live-aspect': String(frame.aspect), '--live-video-w': `${frame.maxWidth}px` } as CSSProperties;
+  // Task 28 (experiment): on a portrait phone a crop mode makes the frame taller and the video covers it, cutting only
+  // its sides. Never while the SDK's mic card has the stage. Long-press the frame to cycle the modes (frameMode.ts).
+  const portraitPhone = usePortraitPhone();
+  const [frameMode, cycleFrameMode] = useFrameMode();
+  const crop = inPermission ? null : cropAspect(frameMode, portraitPhone);
+  const heroVars: Record<string, string> = crop
+    ? { '--live-aspect': String(crop) }
+    : { '--live-aspect': String(frame.aspect), '--live-video-w': `${frame.maxWidth}px` };
+  const heroStyle = heroVars as CSSProperties;
+  const framePress = useLongPress(() => {
+    const next = cycleFrameMode();
+    haptics.light();
+    toast.info(`Frame ${next}`, { icon: '🖼️' });
+  }, portraitPhone && !inPermission);
   // P-6: portrait captions get their own reserved band between the stage and the controls; landscape overlays them
   // on the bottom of the frame. Either way they can never reach the controls.
   const landscape = useLandscape();
@@ -226,8 +240,8 @@ export function LiveSession(props: LiveSessionProps) {
         {/* The stage: what is left between the chips and the captions/controls. The frame is centred in it at the
             video's aspect ratio (P-3), on the screen's own soft gradient. */}
         <div className={clsx('live-stage', inPermission && 'is-permission')} data-testid="live-stage">
-          <div className="live-hero" style={heroStyle} data-testid="live-hero">
-            <div className="live-frame absolute inset-0 overflow-hidden rounded-[24px] bg-white/20 ring-[3px] ring-white/80">
+          <div className={clsx('live-hero', crop && 'is-crop')} style={heroStyle} data-testid="live-hero" data-frame-mode={crop ? frameMode : '16:9'}>
+            <div className="live-frame absolute inset-0 overflow-hidden rounded-[24px] bg-white/20 ring-[3px] ring-white/80" {...framePress}>
               {/* The SDK owns this node's children: React never renders into it. */}
               <div ref={s.containerRef} className="et-avatar-host absolute inset-0" data-testid="avatar-container" />
               {showConnecting ? (

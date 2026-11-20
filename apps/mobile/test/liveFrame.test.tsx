@@ -11,6 +11,7 @@ import { LiveSession, type LiveSessionProps } from '../src/live/LiveSession';
 import { Captions } from '../src/live/parts/Captions';
 import type { LiveCallbacks, LiveSdk } from '../src/live/sdk';
 import { __resetLiveChainForTests } from '../src/live/useNapsterSession';
+import { FRAME_MODE_KEY } from '../src/live/frameMode';
 import { TRANSPARENT_POSTER, videoFrame } from '../src/live/videoFrame';
 
 // Device test P-3 (as re-specified): the avatar frame takes the VIDEO's own aspect ratio (16:9 until the SDK's
@@ -88,8 +89,12 @@ const rule = (selector: string) => {
 };
 
 const realMatchMedia = window.matchMedia;
-beforeEach(() => __resetLiveChainForTests());
+beforeEach(() => {
+  __resetLiveChainForTests();
+  localStorage.clear();
+});
 afterEach(() => {
+  localStorage.clear();
   window.matchMedia = realMatchMedia;
   vi.useRealTimers();
 });
@@ -102,7 +107,10 @@ describe('videoFrame', () => {
   });
 });
 
+// Task 28: a portrait phone defaults to a crop mode (liveFrameMode.test.tsx); these cover the 16:9 contain frame.
 describe('live avatar frame (P-3)', () => {
+  beforeEach(() => localStorage.setItem(FRAME_MODE_KEY, '16:9'));
+
   it('is 16:9 until the video reports its size, then takes the real aspect and caps at its intrinsic width', async () => {
     const { h } = await mount();
     expect(hero().style.getPropertyValue('--live-aspect')).toBe(String(16 / 9));
@@ -131,7 +139,7 @@ describe('live avatar frame (P-3)', () => {
     expect(hero().style.getPropertyValue('--live-video-w')).toBe('1280px');
   });
 
-  it('CSS: the hero is sized from the stage (container units) at the video aspect; the video is contained, never cropped', () => {
+  it('CSS: the hero is sized from the stage (container units) at the video aspect; the video is contained, cropped only in a crop mode', () => {
     const h = rule('.live-hero');
     expect(h).toMatch(/aspect-ratio:\s*var\(--live-aspect/);
     expect(h).toMatch(/width:\s*min\(100cqw,\s*calc\(100cqh \* var\(--live-aspect/);
@@ -141,10 +149,10 @@ describe('live avatar frame (P-3)', () => {
     expect(video).toMatch(/object-fit:\s*contain/);
     expect(video).toMatch(/width:\s*100%/);
     expect(video).toMatch(/height:\s*100%/);
-    // No cover on the call screen (the Welcome hero, task 26c, may crop its own cream margins).
+    // No cover on the call screen except in a task 28 crop mode (the Welcome hero, task 26c, may crop its own margins).
     const liveRules = css.match(/[^{}]*(et-avatar-host|\.live-)[^{}]*\{[^}]*\}/g) ?? [];
     expect(liveRules.length).toBeGreaterThan(5);
-    for (const r of liveRules) expect(r).not.toMatch(/object-fit:\s*cover/);
+    for (const r of liveRules.filter((r) => !r.includes('.live-hero.is-crop'))) expect(r).not.toMatch(/object-fit:\s*cover/);
     // The SDK's wrappers fill the host, and its unstyled loading chrome (photo bubble, placeholder) is hidden.
     expect(css).toMatch(/\.et-avatar-host \.np_companion-live-container,[\s\S]*?\.et-avatar-host \.np_companion-avatar-media \{[^}]*inset:\s*0/);
     expect(css).toMatch(/\.et-avatar-host \.np_companion-loading-photo-bubble[^{]*\{[^}]*display:\s*none/);
