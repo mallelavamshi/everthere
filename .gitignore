@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.wrangler/
+.superpowers/
+.remember/
+apps/mobile/android/app/build/
+*.keystore
+.wrangler/
+scripts/assets/out/
+scripts/seed/out/
+.dev.vars
+.dev.vars.*
+docs/notes/spike/*.png
+!docs/notes/spike/evidence-*.png

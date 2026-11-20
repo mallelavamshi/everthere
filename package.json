@@ -1,0 +1,16 @@
+{
+  "name": "everthere",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "test": "pnpm -r test",
+    "assets:generate": "pnpm --filter @everthere/scripts exec tsx --env-file=../.env assets/generate.ts",
+    "assets:optimize": "pnpm --filter @everthere/scripts exec tsx assets/optimize.ts",
+    "napster:flag-tool": "pnpm --dir scripts exec tsx napster/setupFlagTool.ts",
+    "napster:voices": "pnpm --dir scripts exec tsx napster/voicePreviews.ts",
+    "seed": "pnpm --dir scripts exec tsx seed/seed.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,397 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: theme('colors.ink');
+  --muted: theme('colors.muted');
+  --cream: theme('colors.cream');
+  --sun: theme('colors.sun');
+  --coral: theme('colors.coral');
+  --mint: theme('colors.mint');
+  --sky: theme('colors.sky');
+  --lilac: theme('colors.lilac');
+  --line: theme('colors.line');
+
+  /*
+   * Safe-area insets: the ONE source for every surface (screens, sheets, the call's controls dock, the tab bar,
+   * toasts). Capacitor 8's SystemBars (insetsHandling 'css', the default) works in one of two ways:
+   * - WebView >= 140 with viewport-fit=cover (our index.html): the page is drawn under the system bars and the insets
+   *   are passed through, so env(safe-area-inset-*) is right (48px bottom on the 3-button test phone) and the
+   *   --safe-area-inset-* Capacitor injects on <html> agree with it;
+   * - older WebViews: Capacitor pads the window itself and reports 0 to the page (both are 0, correctly: the page is
+   *   already above the bars).
+   * Taking the larger of the two is therefore never doubled and never 0 while a bar overlaps the page. Read
+   * env(safe-area-inset-*) nowhere else (test/ui.test.tsx enforces it); pad with var(--et-safe-*) or the *-safe
+   * utilities, and with at most ONE padded element per edge (a sheet's footer slot, a screen's footer, the dock).
+   */
+  --et-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --et-safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+  --et-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --et-safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: 'Fredoka', system-ui, sans-serif;
+    font-weight: 400;
+    color: var(--ink);
+    background: var(--cream);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+    text-size-adjust: 100%;
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  :focus-visible {
+    outline: 3px solid var(--coral);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--sun);
+  }
+}
+
+@layer utilities {
+  .pt-safe { padding-top: var(--et-safe-top); }
+  .pb-safe { padding-bottom: var(--et-safe-bottom); }
+  .pl-safe { padding-left: var(--et-safe-left); }
+  .pr-safe { padding-right: var(--et-safe-right); }
+  /*
+   * A sheet's last element is always its footer slot (Sheet.tsx), which carries the bottom inset (device test P-1).
+   * With a footer: the inset or 16px, whichever is larger. With nothing in it (no footer, or a footer component that
+   * rendered null): just the inset, under the body's own 16px.
+   */
+  .sheet-footer { padding-top: 8px; padding-bottom: max(var(--et-safe-bottom), 16px); }
+  .sheet-footer:empty { padding-top: 0; padding-bottom: var(--et-safe-bottom); }
+}
+
+/* Skeleton shimmer */
+@keyframes et-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.et-skeleton {
+  background: linear-gradient(90deg, theme('colors.skeletonA') 0%, theme('colors.skeletonB') 45%, theme('colors.skeletonA') 90%);
+  background-size: 200% 100%;
+  animation: et-shimmer 1.6s linear infinite;
+}
+@keyframes et-spin {
+  to { transform: rotate(360deg); }
+}
+.et-spin { animation: et-spin 0.8s linear infinite; }
+
+/*
+ * Live session (device tests P-3 and P-6).
+ * The stage is whatever is left between the chips and the captions/controls. The avatar frame sits centred in it at
+ * the video's OWN aspect ratio (--live-aspect, 16:9 until the SDK's <video> reports its size; live/videoFrame.ts),
+ * as large as fits, never wider than the video's intrinsic width (--live-video-w), so the stream is not upscaled
+ * past what the device pixel ratio needs and there is no empty band above or below it. The screen's gradient shows
+ * around it.
+ */
+.live-stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+.live-hero {
+  position: relative;
+  aspect-ratio: var(--live-aspect, 1.7778);
+  width: min(100cqw, calc(100cqh * var(--live-aspect, 1.7778)), var(--live-video-w, 1280px));
+}
+/* Portrait: a band between the stage and the controls. It reserves room for the two clamped bubbles (avatar 3 lines,
+   child 2) in em, so the reservation grows with the system font size (Android text zoom scales it like the captions),
+   and it may grow past that: the stage (flex 1 1 0, min-height 0) gives way, so the latest caption is never clipped
+   and never reaches the controls (fix round 1). */
+.live-captions-below {
+  --live-captions-h: 11.5em; /* 184px at 16px */
+  flex: none;
+  width: 100%;
+  max-width: 560px;
+  min-height: var(--live-captions-h);
+  margin: 10px auto 0;
+}
+@media (min-width: 640px) {
+  .live-captions-below { --live-captions-h: 12.5em; }
+}
+/* "Still there?" gets its own slot, centred on the stage over the frame: never in the captions band (fix round 1). */
+.live-still-there {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 0 8px;
+  pointer-events: none;
+}
+.live-still-there > * { pointer-events: auto; }
+/* Landscape: on a soft scrim inside the frame's bottom edge (the frame itself always fits the stage). */
+.live-captions-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 48px 20px 14px;
+  border-radius: 0 0 24px 24px;
+}
+.live-captions-overlay.has-captions { background: var(--caption-scrim); }
+/*
+ * Welcome (task 26c). The text block is centred in the space above the buttons and the hero takes the rest of it, so a
+ * tall phone shows a bigger picture instead of an empty band. Its height runs from a 120 px floor (short phones) to
+ * width / 1.25. The picture is a wide 1400x800 scene on a flat cream ground: while its box is wider than 7:4 it is
+ * contained (shrunk, nothing lost) on that same cream; once the box is taller it is covered, which only trims cream
+ * margins and the outer cloud edges (1.25 keeps x 200-1200 of 1400; the people sit in 400-1030).
+ */
+.welcome-body {
+  container: welcome / inline-size;
+}
+.welcome-hero {
+  position: relative;
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 120px;
+  max-height: calc(100cqw / 1.25);
+  container: welcome-hero / size;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--cream); /* the picture's own ground is the same cream */
+}
+.welcome-hero img {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  object-position: 50% 55%;
+}
+@container welcome-hero (min-aspect-ratio: 7 / 4) {
+  .welcome-hero img { object-fit: contain; }
+}
+
+/* The controls dock (task 26c). Everything is in px, not rem/em: Android's large system text then grows only the
+   labels, never the circles or the gaps. Five controls share the width evenly (a 360 px phone gives each about 64 px,
+   a 52 px circle each; 13 px labels, as on tablets); a label that still doesn't fit ends in an ellipsis on one line
+   instead of wrapping (the control's title carries the full name). */
+.live-dock {
+  display: flex;
+  width: 100%;
+  max-width: 440px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 6px;
+}
+.live-control {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 84px;
+}
+.live-control-label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  line-height: 1.25;
+}
+@media (min-width: 640px) {
+  .live-dock { width: auto; max-width: none; justify-content: center; gap: 20px; padding: 10px 24px; }
+  .live-control { flex: 0 0 72px; }
+}
+@keyframes et-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.08); opacity: 0.9; }
+}
+.et-breathe { animation: et-breathe 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .et-skeleton { animation: none; }
+  .et-breathe { animation: none; }
+  /* Spinner stays visible as a (slow) progress cue. */
+  .et-spin { animation-duration: 2.4s !important; animation-iteration-count: infinite !important; }
+}
+
+/*
+ * The Napster SDK's screen-reader announcer ("Connecting", "Avatar is ready", …) and its mic-permission live region:
+ * the SDK's own stylesheet is not loaded, so they showed as raw text over the video (device test M-2). Visually
+ * hidden, still read by screen readers. Scoped to our avatar host container.
+ */
+.et-avatar-host .np_companion-announcer,
+.et-avatar-host .np_companion-mic-permission-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * The Napster SDK's avatar DOM (2.0.0 bundle: #np_companion-sdk-root > .np_companion-live-container >
+ * .np_companion-avatar > .np_companion-avatar-wrap > #np_companion-avatar-container > .np_companion-avatar-media >
+ * video.np_companion-avatar-video). Its stylesheet is not loaded, so the video showed at its natural size in the top
+ * of the frame (device test P-3). The root just fills our host (not clipped: its mic-permission card lives in it, see
+ * below); the video's own wrappers fill it and clip to the frame's corners; the video is CONTAINED (never cropped or
+ * stretched: the frame already has the video's aspect ratio). The SDK's loading chrome is hidden: LiveSession draws
+ * its own.
+ */
+.et-avatar-host #np_companion-sdk-root {
+  position: absolute;
+  inset: 0;
+}
+.et-avatar-host .np_companion-live-container,
+.et-avatar-host .np_companion-avatar,
+.et-avatar-host .np_companion-avatar-wrap,
+.et-avatar-host #np_companion-avatar-container,
+.et-avatar-host .np_companion-avatar-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.et-avatar-host video.np_companion-avatar-video,
+.et-avatar-host canvas.np_companion-avatar-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+/* Invisible until the stream has a frame (live/videoFrame.ts): no poster, no WebView placeholder. Never display:none. */
+.et-avatar-host video[data-et-waiting] {
+  opacity: 0;
+}
+.et-avatar-host .np_companion__d-none,
+.et-avatar-host .loader-container,
+.et-avatar-host .np_companion-placeholder-bg,
+.et-avatar-host .np_companion-loading-photo-bubble {
+  display: none !important;
+}
+
+/*
+ * The rest of the SDK's own chrome (task 26c round 2, seen on the phone while connecting): its "Ask companion" entry
+ * point (a grey silhouette and clipped heading), its own call controls and disclaimer, the chat question bar, its
+ * tooltips and its idle dialog. LiveSession draws all of these itself. The video and its wrappers are never hidden;
+ * the video's dark poster is replaced by a transparent one, and the video is kept invisible until it plays
+ * (live/videoFrame.ts).
+ */
+.et-avatar-host .np_companion-entry-point,
+.et-avatar-host .np_companion-entry-point-card-wrap,
+.et-avatar-host .np_companion-avatar-control-wrap,
+.et-avatar-host .np_companion-avatar-control-container,
+.et-avatar-host .np_companion-ctl-btn,
+.et-avatar-host .np_companion-disclaimer,
+.et-avatar-host .np_companion-disclaimer-text,
+.et-avatar-host .np_companion-chat-question-bar-container,
+.et-avatar-host .np_companion-tooltip,
+.et-avatar-host .np_companion-inactive-overlay {
+  display: none !important;
+}
+
+/*
+ * The SDK's mic-permission card (fix round 1). The 2.0.0 bundle appends it to #np_companion-sdk-root, beside the
+ * video: div.np_companion-mic-permission[role=dialog][data-state=pending|blocked] > .np_companion-mic-permission-wrap >
+ * .np_companion-mic-permission-card > h2 heading, p subheading, div actions > button primary. While the SDK waits for
+ * the mic, LiveSession puts the stage in permission mode: the hero and the frame stop being positioned, so the host
+ * (absolute, inset 0) is laid out against the whole stage and is no longer clipped by the small 16:9 frame; the card
+ * is centred over the stage at a usable size. Android's own permission dialog shows on top of it.
+ */
+.live-stage.is-permission .live-hero {
+  position: static;
+}
+/* The empty frame stays in place (static, full height) but draws nothing: no ring, no tint behind the card (26c). */
+.live-stage.is-permission .live-frame {
+  position: static;
+  height: 100%;
+  background: transparent;
+  box-shadow: none;
+}
+.et-avatar-host .np_companion-mic-permission {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  outline: none;
+}
+.et-avatar-host .np_companion-mic-permission-wrap {
+  width: 100%;
+  max-width: 320px;
+}
+.et-avatar-host .np_companion-mic-permission-card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 20px;
+  border: 3px solid var(--ink);
+  border-radius: 24px;
+  background: var(--cream);
+  color: var(--ink);
+  text-align: center;
+}
+.et-avatar-host .np_companion-mic-permission-heading {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.et-avatar-host .np_companion-mic-permission-subheading {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+/* "In the browser pop-up…" is browser wording; on Android the system dialog is already on screen (as the SDK does). */
+.et-avatar-host .np_companion-mic-permission[data-state='pending'] .np_companion-mic-permission-subheading,
+.et-avatar-host .np_companion-mic-permission-actions[hidden] {
+  display: none;
+}
+.et-avatar-host .np_companion-mic-permission-actions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+.et-avatar-host .np_companion-mic-permission-primary {
+  min-height: 48px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--sun);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+}

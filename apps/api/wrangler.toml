@@ -1,0 +1,26 @@
+name = "everthere-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "everthere"
+database_id = "8da3fea4-355f-4185-99f3-7a1bed94b8b3"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "everthere-media"
+
+[ai]
+binding = "AI"
+
+[triggers]
+crons = ["*/2 * * * *", "0 8 * * *"]
+
+[vars]
+PUBLIC_API_BASE = "https://everthere-api.m-vamshikrishna22.workers.dev"
+NAPSTER_FLAG_FUNCTION_ID = "flag_concern"
+CLERK_AUTHORIZED_PARTIES = "https://localhost"
+DEV_ROUTES = "0"

@@ -1,0 +1,22 @@
+# Test-only config: no AI binding (Workers AI is remote-only), no crons. Keep in sync with wrangler.toml otherwise.
+name = "everthere-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "everthere"
+database_id = "00000000-0000-0000-0000-000000000000" # placeholder; replace after `wrangler d1 create everthere`
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "everthere-media"
+
+[vars]
+PUBLIC_API_BASE = "http://localhost:8787"
+NAPSTER_FLAG_FUNCTION_ID = "flag_concern"
+DEV_ROUTES = "0"
+ACTING_TOKEN_KEY = "test-acting-token-key-not-a-secret"
+MEDIA_SIGNING_KEY = "test-media-signing-key-not-a-secret"

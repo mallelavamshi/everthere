@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- EverThere cream (theme/tokens.ts): the window colour before the app paints its own (WindowBackgroundPlugin). -->
+    <color name="et_cream">#FFF8EC</color>
+</resources>
