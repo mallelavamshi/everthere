@@ -19,16 +19,16 @@ OUT = os.path.join(HERE, "out")
 
 # scene key -> (candidate number, screenshot in out/raw)
 PICKS = {
-    "01-daycare-tablet-girl": (1, "tablet-mommy-16"),
-    "01b-daycare-tablet-boy-male-teacher": (1, "tablet-daddy-16"),
-    "02-daycare-phone-boy": (1, "phone-daddy-17"),
-    "02b-daycare-phone-girl-female-teacher": (2, "phone-mommy-14"),
-    "03-home-nanny-tablet-boy": (6, "tablet-daddy-22"),
-    "04-home-nanny-phone-girl": (2, "phone-mommy-18"),
-    "05-mom-home-phone": (1, "parent-summary-rich"),
-    "06-dad-office-phone": (5, "parent-alerts"),
-    "07-dad-home-phone": (1, "parent-sessions"),
-    "08-mom-office-phone": (1, "parent-transcript"),
+    "01-daycare-tablet-mia-mommy": (2, "tablet-mommy-16"),
+    "02-daycare-tablet-leo-daddy": (2, "tablet-leo-daddy"),
+    "03-daycare-phone-mia-daddy": (2, "phone-daddy-17"),
+    "04-daycare-phone-ava-mommy": (1, "phone-ava-mommy"),
+    "05-home-nanny-tablet-leo-daddy": (2, "tablet-leo-daddy-b"),
+    "06-home-nanny-phone-sam-mama": (1, "phone-sam-mama"),
+    "07-mom-home-phone": (2, "parent-summary-rich"),
+    "08-dad-office-phone": (2, "parent-alerts"),
+    "09-dad-home-phone": (1, "parent-sessions"),
+    "10-mom-office-phone": (3, "parent-transcript"),
 }
 
 
