@@ -121,7 +121,11 @@ export async function loadCallSituation(
 }
 
 export const TEST_SESSION_CONTEXT =
-  'This is a short test call with the grown-up who made you, so they can hear how you look and sound. Say hello warmly and keep it brief.';
+  'This is a short test call with the grown-up who made you, so they can hear how you look and sound. You are talking with that adult, not with a child: there is no upset child to comfort, so skip the comforting plan. Say hello warmly, show how you would talk to their little one if they ask, and keep it brief.';
+
+/** Opening guidance for a parent's test call (Napster paraphrases it). */
+export const TEST_CALL_OPENING =
+  'This is a test call with the grown-up who made you, not a child. Greet them warmly, say this is a test so they can hear how you look and sound, and invite them to say hello back.';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Views

@@ -301,7 +301,7 @@ describe('avatars', () => {
     expect(agentId).toBe('agent1');
     expect(opts).toMatchObject({ channelType: 'webrtc', externalClientId: await testClientId(id) });
     expect(opts.externalClientId).toMatch(/^t_[A-Za-z0-9_-]{30}$/);
-    expect(opts.initialSpeech).toMatch(/^Hi! This is a test call/);
+    expect(opts.initialSpeech).toMatch(/^This is a test call with the grown-up who made you, not a child/);
     expect(opts.tags).toEqual({ kind: 'test', avatarId: id });
     const sess = await env.DB.prepare('SELECT * FROM comfort_session WHERE id=?').bind(out.sessionId).first<Record<string, unknown>>();
     expect(sess).toMatchObject({ kind: 'test', avatar_id: id, caregiver_user_id: 'b6', child_id: null, napster_session_id: 'conn1' });

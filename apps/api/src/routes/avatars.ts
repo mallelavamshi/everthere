@@ -5,6 +5,7 @@ import { apiError, readJson } from '../http';
 import { forbidDemo } from '../auth/demo';
 import { newId } from '../lib/ids';
 import { testClientId } from '../lib/clientIds';
+import { TEST_CALL_OPENING } from '../services/sessions';
 import { isOwnedKey } from '../lib/mediaKeys';
 import { MEDIA_URL_TTL_MS, signMediaUrl } from './media';
 import { napster as makeNapster, NapsterError } from '../napster/client';
@@ -169,7 +170,8 @@ export function avatarRoutes(opts: { napster?: AvatarNapster } = {}) {
       const conn = await client(c.env).createConnection(a.napster_agent_id, {
         channelType: 'webrtc',
         externalClientId: await testClientId(a.id),
-        initialSpeech: 'Hi! This is a test call so you can hear how I sound. Say hello back!',
+        // Task 32: the agent's instructions expect an upset child; a test call is with the grown-up who made it.
+        initialSpeech: TEST_CALL_OPENING,
         tags: { kind: 'test', avatarId: a.id },
       });
       await c.env.DB.prepare('UPDATE comfort_session SET napster_session_id = ? WHERE id = ?').bind(conn.connectionId, sessionId).run();
