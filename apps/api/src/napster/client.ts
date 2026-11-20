@@ -211,6 +211,8 @@ export function napster(apiKey: string, opts: NapsterOptions = {}) {
     // scripts/napster/setupComfortKnowledge.ts. List responses are tolerated as `{ items }` or a bare array.
     listFaqCollections: () => call<{ items?: FaqCollection[] } | FaqCollection[]>('GET', '/faqs'),
     getFaqCollection: (id: string) => call<FaqCollection>('GET', `/faqs/${enc(id)}`),
+    /** The collection GET returns only `itemsCount`; the pairs come from here (a collection holds at most 50). */
+    listFaqItems: (id: string) => call<{ items?: FaqItem[] } | FaqItem[]>('GET', `/faqs/${enc(id)}/items?pageSize=100`),
     createFaqCollection: (b: { name: string; faqs?: { question: string; answer: string }[] }) => call<FaqCollection>('POST', '/faqs', b),
     addFaqItem: (collectionId: string, b: { question: string; answer: string }) => call<FaqItem>('POST', `/faqs/${enc(collectionId)}/items`, b),
     updateFaqItem: (collectionId: string, itemId: string, b: { question?: string; answer?: string }) =>
@@ -238,7 +240,7 @@ export interface FaqItem {
 export interface FaqCollection {
   id: string;
   name: string;
-  items?: FaqItem[];
+  itemsCount?: number;
 }
 export interface KnowledgeBase {
   id: string;

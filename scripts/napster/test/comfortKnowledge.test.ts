@@ -6,7 +6,7 @@ import { agentPatch, syncAgents } from '../syncAgents';
 function fakeNapster(over: Partial<KnowledgeNapster> = {}): KnowledgeNapster & Record<string, ReturnType<typeof vi.fn>> {
   return {
     listFaqCollections: vi.fn(async () => ({ items: [] })),
-    getFaqCollection: vi.fn(async () => ({ id: 'faq1', name: 'x', items: [] })),
+    listFaqItems: vi.fn(async () => ({ items: [] })),
     createFaqCollection: vi.fn(async () => ({ id: 'faq1', name: 'x' })),
     addFaqItem: vi.fn(async () => ({})),
     updateFaqItem: vi.fn(async () => ({})),
@@ -51,9 +51,8 @@ describe('ensureFaqCollection', () => {
     ];
     const n = fakeNapster({
       listFaqCollections: vi.fn(async () => [{ id: 'c9', name: 'EverThere: little questions' }]),
-      getFaqCollection: vi.fn(async () => ({
-        id: 'c9',
-        name: 'EverThere: little questions',
+      // The pairs come from GET /faqs/{id}/items (the collection GET has only itemsCount).
+      listFaqItems: vi.fn(async () => ({
         items: [
           { id: 'i1', question: 'Q1?', answer: 'A1' },
           { id: 'i2', question: ' Q2? ', answer: 'A2 old' },
@@ -65,6 +64,16 @@ describe('ensureFaqCollection', () => {
     expect(n.addFaqItem).toHaveBeenCalledWith('c9', { question: 'Q3?', answer: 'A3' });
     expect(n.updateFaqItem).toHaveBeenCalledWith('c9', 'i2', { answer: 'A2 new' });
     expect(n.createFaqCollection).not.toHaveBeenCalled();
+    expect(n.listFaqItems).toHaveBeenCalledWith('c9');
+  });
+  it('a second run over an up-to-date collection adds nothing', async () => {
+    const faqs = [{ question: 'Q1?', answer: 'A1' }];
+    const n = fakeNapster({
+      listFaqCollections: vi.fn(async () => [{ id: 'c9', name: 'EverThere: little questions' }]),
+      listFaqItems: vi.fn(async () => [{ id: 'i1', question: 'Q1?', answer: 'A1' }]),
+    });
+    expect(await ensureFaqCollection(n, faqs)).toEqual({ id: 'c9', action: 'synced', added: 0, updated: 0 });
+    expect(n.addFaqItem).not.toHaveBeenCalled();
   });
   it('refuses more than 50 pairs', async () => {
     const many = Array.from({ length: 51 }, (_, i) => ({ question: `Q${i}`, answer: 'A' }));

@@ -15,7 +15,7 @@ import { createHash, createHmac } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { napster, type FaqCollection, type KnowledgeBase, type KnowledgeFile } from '../../apps/api/src/napster/client';
+import { napster, type FaqCollection, type FaqItem, type KnowledgeBase, type KnowledgeFile } from '../../apps/api/src/napster/client';
 import { COMFORT_FAQS, FAQ_COLLECTION_NAME, type Faq } from './content/faqs';
 
 export const KNOWLEDGE_BASE_NAME = 'EverThere: calm-down corner';
@@ -29,7 +29,7 @@ const norm = (s: string) => s.trim().replace(/\s+/g, ' ');
 
 export type KnowledgeNapster = {
   listFaqCollections: () => Promise<{ items?: FaqCollection[] } | FaqCollection[]>;
-  getFaqCollection: (id: string) => Promise<FaqCollection>;
+  listFaqItems: (id: string) => Promise<{ items?: FaqItem[] } | FaqItem[]>;
   createFaqCollection: (b: { name: string; faqs?: Faq[] }) => Promise<FaqCollection>;
   addFaqItem: (collectionId: string, b: Faq) => Promise<unknown>;
   updateFaqItem: (collectionId: string, itemId: string, b: { answer: string }) => Promise<unknown>;
@@ -51,7 +51,7 @@ export async function ensureFaqCollection(
     const c = await n.createFaqCollection({ name, faqs: [...faqs] });
     return { id: c.id, action: 'created', added: faqs.length, updated: 0 };
   }
-  const items = (await n.getFaqCollection(existing.id)).items ?? [];
+  const items = listOf(await n.listFaqItems(existing.id));
   let added = 0;
   let updated = 0;
   for (const f of faqs) {
