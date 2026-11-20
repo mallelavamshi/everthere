@@ -88,11 +88,11 @@ The platform was already settled (Capacitor, Workers, D1, R2, Napster). The open
 - **The daycare charges parents** for the service as an add-on. Parents who sign up alone pay EverThere directly. Neither is implemented for the hackathon (display only).
 - **Visual style:** Sunny & Playful, with the Fredoka font, sunny yellow `#FFD23F`, coral `#FF7A59`, mint `#C9F2E1`, ink `#2B2140`, cream `#FFF8EC`, chunky outlined buttons with a hard bottom shadow, and emoji as decoration.
 - **Front end:** Custom React (approach A).
-- **Voice:** a stock voice for the demo. ElevenLabs cloning is planned for later.
+- **Voice:** a stock voice for the demo. ElevenLabs cloning is planned for later. (Update 2026-11-20: Mia's Daddy, the maker's own digital twin, already speaks in his cloned voice.)
 - **Auth:** Clerk.
 - **Accounts:** no Azure or Firebase. Only Napster and Cloudflare are used.
 - **Judges:** they receive the APK and the video.
-- **Demo parent faces:** all AI-generated. No real people appear in the demo data.
+- **Demo parent faces:** all AI-generated, except Mia's Daddy (update 2026-11-20): he is the maker's own Napster digital twin, real face and cloned voice, seeded with `is_synthetic=0` and a self-consent record.
 
 **My calls that follow from those decisions:**
 - **Clerk handles identity only.** It covers sign-up, sign-in, password reset, and optionally Google sign-in. All roles, families, daycares, classrooms and connections live in D1, so there's one source of truth for permissions. Clerk Organizations aren't used.
@@ -200,7 +200,7 @@ A person can hold more than one role (for example, a teacher who is also a paren
   - Sarah (Mia's mom) and her partner.
   - Leo's dad, who signed up alone and has a nanny.
   - Past sessions with summaries.
-  - All parent faces are **AI-generated**: the seed script makes photorealistic, waist-up 16:9 portraits with Meta's `muse-image-1.0` (§7a), stores them in R2, and creates real Napster companions and agents from them. Each is marked `is_synthetic`, and the consent step is recorded as "AI-generated face, no real person".
+  - All parent faces are **AI-generated** (except Mia's Daddy since 2026-11-20, the maker's own digital twin; see §5): the seed script makes photorealistic, waist-up 16:9 portraits with Meta's `muse-image-1.0` (§7a), stores them in R2, and creates real Napster companions and agents from them. Each is marked `is_synthetic`, and the consent step is recorded as "AI-generated face, no real person".
 - **Must:** **Judge access** (§8a): demo accounts listed in the submission, plus a "Try the demo" path.
 
 ## 7a. Media assets (user decision: high quality, no compromise; generated with Meta)

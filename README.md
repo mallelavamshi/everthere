@@ -65,7 +65,7 @@ One Android app whose home screen depends on who signs in. One Hono API on Cloud
 
 | Model | Use |
 | --- | --- |
-| `muse-image-1.0` | All of the app's art (stickers, empty states, video cards) and the photorealistic, AI-generated demo portraits. Every demo face is synthetic and marked so. |
+| `muse-image-1.0` | All of the app's art (stickers, empty states, video cards) and the photorealistic, AI-generated demo portraits. Every demo face is synthetic and marked so, except Mia's Daddy: the maker's own Napster digital twin, recorded with a self-consent record. |
 | `muse-spark-1.3` | After each session: a two-line summary, a mood signal, and a sweep for concerns the live tool missed. |
 
 ## Safety and privacy
@@ -129,7 +129,7 @@ Full one-time setup (D1, R2, Clerk dashboard, Napster webhook, demo seed, smoke 
 
 | Limit today | Why / what's next |
 | --- | --- |
-| **Stock voices, not cloned voices** | Voice cloning is on the roadmap. The Napster Recordings API wasn't enabled for preview clips, so the demo uses stock voices. |
+| **Mostly stock voices** | Mia's Daddy uses the maker's own cloned voice through his Napster digital twin. The other demo parents use stock voices, and parents who sign up pick a stock voice: in-app voice cloning is on the roadmap (the Napster Recordings API wasn't enabled for preview clips). |
 | **Softer lip-sync** | Avatars use Napster's v1 photo mode, so lip-sync is softer than v2 video avatars. |
 | **No push notifications when the app is closed** | Alerts appear in the in-app Alerts center, and as local notifications while the app is open or resumes. Push is a roadmap item. |
 | **Android only** | iOS is a roadmap item. |

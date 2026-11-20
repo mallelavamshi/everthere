@@ -23,7 +23,7 @@ Target: 2 to 3 minutes. Voiceover (VO) is calm and warm. Art assets are keys fro
 - Record the live call at least twice. Say "I fell and hurt my knee" on a take where the avatar is already speaking, to make the flag banner land.
 - Use a tablet 700px or wider for the teacher shots, so Peek as a Teacher registers the tablet and the "Who's teaching?" sheet appears.
 - Do the recording before 08:00 UTC resets the demo, or reseed. Check the credit guard first. A recorded call counts toward the $120 cap.
-- All faces are AI-generated. Mention it in the end credits.
+- Mia's Daddy is the maker's own Napster digital twin (real face and voice, with consent). Every other face is AI-generated. Mention both in the end credits.
 - **Nanny path:** Try the demo can't do this (it only offers Parent and Teacher; David and Rosa have no sign-in). Film it with two real accounts made for the video: a parent account that invites a nanny from Caregivers, and the nanny's own account.
 - **Parent setup shots** (creating an avatar, test call, Approve) need a fresh real account, because the demo Sarah is already approved.
 - Existing art: `video.title`, `video.chapterParent`, `video.chapterDaycare`, `video.chapterCall`, `video.end`.

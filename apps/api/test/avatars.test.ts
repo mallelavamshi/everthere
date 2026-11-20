@@ -153,6 +153,18 @@ describe('avatars', () => {
     err.mockRestore();
   });
 
+  it("a digital twin's own cloned voice (custom:<id>) is never sent as a stock voiceId: the agent gets no voiceId", async () => {
+    const s = setup();
+    await seedRows(env, { user: [u('a3c', 'Pat Doe')] });
+    const { avatar } = await create(s, 'a3c');
+    await env.DB.prepare('UPDATE avatar SET voice_id = ? WHERE id = ?').bind('custom:5edcdc24-1ebc', avatar.id).run();
+    const g = await s.request(`/api/avatars/${avatar.id}`, { headers: authAs('a3c') });
+    expect(((await g.json()) as { status: string }).status).toBe('ready');
+    const a = s.f.createAgent.mock.calls[0]![0] as Record<string, unknown>;
+    expect(a).not.toHaveProperty('voiceId');
+    expect((await row(avatar.id))!.napster_agent_id).toBe('agent1');
+  });
+
   it('empty flag function id -> functions [] and a warning, not a failure', async () => {
     const s = setup(fake(), { NAPSTER_FLAG_FUNCTION_ID: '' });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

@@ -1,4 +1,4 @@
-import { buildAgentInstructions } from '@everthere/shared';
+import { CUSTOM_VOICE_PREFIX, buildAgentInstructions } from '@everthere/shared';
 import type { Env } from '../env';
 import type { NapsterClient, ProviderSettings } from '../napster/client';
 import { MEDIA_URL_TTL_MS, signMediaUrl } from '../routes/media';
@@ -119,7 +119,8 @@ export async function advanceAvatar(env: Env, napster: AvatarNapster, avatar: Av
     ({ id: agentId } = await napster.createAgent({
       companionId: avatar.napster_companion_id!,
       name: `everthere-${avatar.id}-${avatar.napster_companion_id!.slice(-6)}`,
-      voiceId: avatar.voice_id,
+      // A digital twin's own cloned voice (`custom:<id>`) is not a stock voice: omit voiceId and the twin speaks with it.
+      ...(avatar.voice_id.startsWith(CUSTOM_VOICE_PREFIX) ? {} : { voiceId: avatar.voice_id }),
       language: 'en',
       mode: 'conversation',
       providerSettings: agentProviderSettings(buildAgentInstructions(firstNameOf(owner?.name ?? ''), avatar.parent_title)),
@@ -145,7 +146,7 @@ export async function advanceAvatar(env: Env, napster: AvatarNapster, avatar: Av
         .bind(agentId, avatar.id, avatar.napster_companion_id)
         .run();
       if (r2.meta.changes) {
-        if (cur.voice_id) await napster.patchAgent(agentId, { voiceId: cur.voice_id }).catch((e) => console.error('voice patch failed', avatar.id, e));
+        if (cur.voice_id && !cur.voice_id.startsWith(CUSTOM_VOICE_PREFIX)) await napster.patchAgent(agentId, { voiceId: cur.voice_id }).catch((e) => console.error('voice patch failed', avatar.id, e));
         return (await loadAvatar(env, avatar.id)) ?? avatar;
       }
     }
