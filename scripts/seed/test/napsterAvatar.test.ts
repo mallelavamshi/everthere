@@ -70,6 +70,7 @@ describe('ensureNapsterAvatar', () => {
       mode: 'conversation',
       providerSettings: { instructions: buildAgentInstructions('Vamshi', 'Daddy'), temperature: 0.6, noiseReduction: { type: 'farField' } },
       functions: ['flag_concern'],
+      disableIdleTimeout: true,
     });
     expect('voiceId' in n.createAgent.mock.calls[0]![0]).toBe(false);
     expect(rec).toEqual({ companionId: VAMSHI_COMPANION_ID, agentId: 'agent-new', voiceId: OWN_VOICE });

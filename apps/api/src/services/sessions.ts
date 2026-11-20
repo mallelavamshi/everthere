@@ -1,4 +1,4 @@
-import { LIMITS, type PlanInput } from '@everthere/shared';
+import { LIMITS, REASONS, type CallSituation, type PlanInput, type Reason } from '@everthere/shared';
 import type { Env } from '../env';
 import type { NapsterClient } from '../napster/client';
 import { firstNameOf } from './avatars';
@@ -94,6 +94,30 @@ export async function loadSessionSetup(env: E, childId: string, avatarId: string
     todayNote: p.todayNote ?? undefined, // planView already dropped an expired note
   };
   return { plan, agentId: r.napster_agent_id };
+}
+
+/**
+ * Why the call is happening and who is with the child (task 32), for the opening, the profile and the context.
+ * Daycare when the session has an org (its name is the place, "their teacher, Jess"); home otherwise ("Ana").
+ * Undefined for a test call or an unknown reason.
+ */
+export async function loadCallSituation(
+  env: E,
+  s: { reason: string | null; caregiver_user_id: string; org_id: string | null },
+): Promise<CallSituation | undefined> {
+  if (!s.reason || !(s.reason in REASONS)) return undefined;
+  const r = await env.DB
+    .prepare('SELECT u.name AS caregiver, o.name AS org FROM user u LEFT JOIN org o ON o.id = ? WHERE u.id = ?')
+    .bind(s.org_id, s.caregiver_user_id)
+    .first<{ caregiver: string | null; org: string | null }>();
+  const first = firstNameOf(r?.caregiver ?? '');
+  const daycare = s.org_id != null;
+  return {
+    reason: s.reason as Reason,
+    setting: daycare ? 'daycare' : 'home',
+    ...(first ? { caregiverName: daycare ? `their teacher, ${first}` : first } : {}),
+    ...(daycare && r?.org?.trim() ? { placeName: r.org.trim() } : {}),
+  };
 }
 
 export const TEST_SESSION_CONTEXT =

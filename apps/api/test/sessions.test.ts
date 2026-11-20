@@ -6,7 +6,7 @@ import { napster as realNapster, NapsterError } from '../src/napster/client';
 import { signActingToken, ACTING_TTL_MS } from '../src/auth/acting';
 import { testVerify, testFetchProfile, authAs, seedRows } from './helpers';
 import { childClientId } from '../src/lib/clientIds';
-import { TEST_SESSION_CONTEXT } from '../src/services/sessions';
+import { loadCallSituation, TEST_SESSION_CONTEXT } from '../src/services/sessions';
 
 const NOW = Date.now();
 const DAY = 86_400_000;
@@ -180,7 +180,10 @@ describe('POST /api/sessions', () => {
     expect(b.externalClientProfile).toMatchObject({ childName: 'Mia', parentTitle: 'Mommy', parentFirstName: 'Pat', nicknames: ['Bug'], tone: 'calm' });
     expect(b.externalClientProfile.childAgeYears).toBeGreaterThanOrEqual(4);
     expect(b.externalClientProfile).not.toHaveProperty('todayNote'); // expired note dropped
-    expect(b.initialSpeech).toBe('Hi Bug! I know you miss Mommy. I\'m here with you on the screen.');
+    // Task 32: initialSpeech is guidance (Napster paraphrases it); the profile carries the situation from the start.
+    expect(b.initialSpeech).toContain('Open the call as Mommy, in the first person. Greet Bug warmly by name');
+    expect(b.initialSpeech).toContain('are they missing you?');
+    expect(b.externalClientProfile).toMatchObject({ whyThisCall: 'missing Mommy', whoIsHoldingTheScreen: 'their teacher, T', whereTheChildIs: 'A' });
     expect(b.tags).toMatchObject({ childId: w.id('C1'), caregiverId: w.id('T'), reason: 'missing_parent', kind: 'child' });
     expect(Array.isArray(b.tags)).toBe(false);
     expect(Object.values(b.tags).every((v) => typeof v === 'string')).toBe(true);
@@ -545,6 +548,20 @@ describe('check-in', () => {
   });
 });
 
+describe('call situation (task 32)', () => {
+  it('daycare: the org is the place and the teacher is "their teacher, <first>"; home: just the first name; test calls: none', async () => {
+    const w = await world('seSi_');
+    expect(await loadCallSituation(env, { reason: 'boo_boo', caregiver_user_id: w.id('T'), org_id: w.id('A') })).toEqual({
+      reason: 'boo_boo', setting: 'daycare', caregiverName: 'their teacher, T', placeName: 'A',
+    });
+    expect(await loadCallSituation(env, { reason: 'upset_nap', caregiver_user_id: w.id('P'), org_id: null })).toEqual({
+      reason: 'upset_nap', setting: 'home', caregiverName: 'Pat',
+    });
+    expect(await loadCallSituation(env, { reason: null, caregiver_user_id: w.id('P'), org_id: null })).toBeUndefined();
+    expect(await loadCallSituation(env, { reason: 'nope', caregiver_user_id: w.id('P'), org_id: null })).toBeUndefined();
+  });
+});
+
 describe('context', () => {
   it('returns the session system message to the caregiver while active only', async () => {
     const w = await world('seCt_');
@@ -557,6 +574,9 @@ describe('context', () => {
     expect(systemMessage).toContain('Mia');
     expect(systemMessage).toContain('the dog');
     expect(systemMessage).not.toContain('old note');
+    // Task 32: it opens with the situation and the plan for the reason.
+    expect(systemMessage.split('\n')[0]).toBe('Right now: Mia is at A with their teacher, T, who called you because Mia is missing Mommy.');
+    expect(systemMessage).toContain('Plan for this call: Missing Mommy is okay');
     for (const u of ['AD', 'P', 'OUT']) expect((await call(s, w.id(u), 'GET', path)).status, u).toBe(404);
     await call(s, w.id('T'), 'POST', `/api/sessions/${sessionId}/end`);
     expect(await errCode(await call(s, w.id('T'), 'GET', path))).toBe('INVALID');

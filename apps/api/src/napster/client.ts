@@ -151,6 +151,9 @@ export function napster(apiKey: string, opts: NapsterOptions = {}) {
       providerSettings: ProviderSettings;
       functions?: string[];
       mode?: 'conversation' | 'puppeteer';
+      /** At most one FAQ collection per agent (docs, Knowledge > FAQs). */
+      faqCollections?: string[];
+      knowledgeBaseId?: string;
       disableIdleTimeout?: boolean;
       tags?: Record<string, string>;
     }) => call<{ id: string }>('POST', '/agents', b),
@@ -204,6 +207,19 @@ export function napster(apiKey: string, opts: NapsterOptions = {}) {
     getFunction: (id: string) => call<Partial<FunctionDef> & { id: string }>('GET', `/functions/${enc(id)}`),
     /** Replaces a function's definition, keeping its id (PUT /public/functions/{functionId}). */
     updateFunction: (id: string, def: FunctionDef) => call<Partial<FunctionDef> & { id: string }>('PUT', `/functions/${enc(id)}`, def),
+    // FAQ collections and knowledge bases (task 32): one shared set for every EverThere agent, set up by
+    // scripts/napster/setupComfortKnowledge.ts. List responses are tolerated as `{ items }` or a bare array.
+    listFaqCollections: () => call<{ items?: FaqCollection[] } | FaqCollection[]>('GET', '/faqs'),
+    getFaqCollection: (id: string) => call<FaqCollection>('GET', `/faqs/${enc(id)}`),
+    createFaqCollection: (b: { name: string; faqs?: { question: string; answer: string }[] }) => call<FaqCollection>('POST', '/faqs', b),
+    addFaqItem: (collectionId: string, b: { question: string; answer: string }) => call<FaqItem>('POST', `/faqs/${enc(collectionId)}/items`, b),
+    updateFaqItem: (collectionId: string, itemId: string, b: { question?: string; answer?: string }) =>
+      call<FaqItem>('PATCH', `/faqs/${enc(collectionId)}/items/${enc(itemId)}`, b),
+    listKnowledgeBases: () => call<{ items?: KnowledgeBase[] } | KnowledgeBase[]>('GET', '/knowledge-bases'),
+    createKnowledgeBase: (b: { name: string; provider: 'azureOpenAI' }) => call<KnowledgeBase>('POST', '/knowledge-bases', b),
+    listKnowledgeBaseFiles: (id: string) => call<{ items?: KnowledgeFile[] } | KnowledgeFile[]>('GET', `/knowledge-bases/${enc(id)}/files`),
+    /** Napster downloads the file from a public URL (ours: a signed /m link to R2). */
+    uploadKnowledgeBaseFile: (id: string, b: { url: string }) => call<KnowledgeFile>('POST', `/knowledge-bases/${enc(id)}/files`, b),
     createRecording: (companionId: string, b: { provider: 'openAi' | 'elevenLabs'; voiceId: string; text: string }) =>
       call<Recording>('POST', `/companions/${enc(companionId)}/recordings`, b),
     getRecording: (companionId: string, recordingId: string) => call<Recording>('GET', `/companions/${enc(companionId)}/recordings/${enc(recordingId)}`),
@@ -213,3 +229,24 @@ export function napster(apiKey: string, opts: NapsterOptions = {}) {
 }
 
 export type NapsterClient = ReturnType<typeof napster>;
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+export interface FaqCollection {
+  id: string;
+  name: string;
+  items?: FaqItem[];
+}
+export interface KnowledgeBase {
+  id: string;
+  name: string;
+  provider?: string;
+}
+export interface KnowledgeFile {
+  id: string;
+  originalName?: string;
+  contentType?: string;
+}

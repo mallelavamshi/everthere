@@ -8,6 +8,8 @@
     "assets:optimize": "pnpm --filter @everthere/scripts exec tsx assets/optimize.ts",
     "napster:flag-tool": "pnpm --dir scripts exec tsx napster/setupFlagTool.ts",
     "napster:voices": "pnpm --dir scripts exec tsx napster/voicePreviews.ts",
+    "napster:knowledge": "pnpm --dir scripts exec tsx napster/setupComfortKnowledge.ts",
+    "napster:sync-agents": "pnpm --dir scripts exec tsx napster/syncAgents.ts",
     "seed": "pnpm --dir scripts exec tsx seed/seed.ts"
   },
   "devDependencies": {

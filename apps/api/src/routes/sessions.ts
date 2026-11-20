@@ -34,6 +34,7 @@ import {
   decodeCursor,
   isActive,
   listForChild,
+  loadCallSituation,
   loadSession,
   loadSessionSetup,
   sessionDetail,
@@ -98,6 +99,8 @@ export function sessionRoutes(opts: { napster?: SessionNapster } = {}) {
     const orgId = actingOrg ?? (await daycareOrgOf(env, actor, b.childId));
     // Never the raw child id (seeded ids contain dots): a stable derived id, asserted against Napster's pattern.
     const externalClientId = await childClientId(b.childId);
+    // Task 32: the avatar knows why it was called and who is with the child from its first word.
+    const situation = await loadCallSituation(env, { reason: b.reason, caregiver_user_id: actor, org_id: orgId ?? null });
 
     // 3. Claim the child's slot atomically (also re-checks the daily limit, so parallel starts can't overshoot it).
     const sessionId = newId();
@@ -126,8 +129,8 @@ export function sessionRoutes(opts: { napster?: SessionNapster } = {}) {
       conn = await napster.createConnection(setup.agentId, {
         channelType: 'webrtc',
         externalClientId,
-        externalClientProfile: buildClientProfile(setup.plan),
-        initialSpeech: buildInitialSpeech(setup.plan, b.reason),
+        externalClientProfile: buildClientProfile(setup.plan, situation),
+        initialSpeech: buildInitialSpeech(setup.plan, situation ?? b.reason),
         tags: { childId: b.childId, caregiverId: actor, reason: b.reason, sessionId, kind: 'child' },
       });
     } catch (e) {
@@ -180,7 +183,8 @@ export function sessionRoutes(opts: { napster?: SessionNapster } = {}) {
     if (!setup) throw notFound();
     // Anyone who may read the context may get the song: the avatar sings it in the call anyway.
     const song = songOf(setup.plan);
-    const view: SessionContextView = { systemMessage: buildSessionContext(setup.plan), ...(song ? { song } : {}) };
+    const situation = await loadCallSituation(c.env, s);
+    const view: SessionContextView = { systemMessage: buildSessionContext(setup.plan, situation), ...(song ? { song } : {}) };
     return c.json(view);
   });
 

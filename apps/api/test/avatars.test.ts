@@ -129,7 +129,11 @@ describe('avatars', () => {
     expect(a.mode).toBe('conversation');
     expect(a.providerSettings.temperature).toBe(0.6);
     expect(a.providerSettings.instructions).toContain('flag_concern');
-    expect(a.providerSettings.instructions).toContain("Pat's");
+    expect(a.providerSettings.instructions).toContain('You are Mommy (Pat)');
+    // Task 32: no Napster idle timeout; FAQ and knowledge only when configured (not in this env).
+    expect(a.disableIdleTimeout).toBe(true);
+    expect(a).not.toHaveProperty('faqCollections');
+    expect(a).not.toHaveProperty('knowledgeBaseId');
     // Device test P-4: a phone or tablet on a classroom table hears the room: far-field noise reduction. No
     // turnDetection override (fix round 1): Napster's defaults apply, so a child's mid-sentence pause isn't cut off.
     expect(a.providerSettings.noiseReduction).toEqual({ type: 'farField' });
@@ -163,6 +167,13 @@ describe('avatars', () => {
     const a = s.f.createAgent.mock.calls[0]![0] as Record<string, unknown>;
     expect(a).not.toHaveProperty('voiceId');
     expect((await row(avatar.id))!.napster_agent_id).toBe('agent1');
+  });
+
+  it('configured FAQ collection and knowledge base are attached to every new agent (task 32)', async () => {
+    const s = setup(fake(), { NAPSTER_FAQ_COLLECTION_ID: 'faq1', NAPSTER_KNOWLEDGE_BASE_ID: 'kb1' });
+    await seedRows(env, { user: [u('a3k', 'Pat')] });
+    await ready(s, 'a3k');
+    expect(s.f.createAgent.mock.calls[0]![0]).toMatchObject({ faqCollections: ['faq1'], knowledgeBaseId: 'kb1', disableIdleTimeout: true });
   });
 
   it('empty flag function id -> functions [] and a warning, not a failure', async () => {

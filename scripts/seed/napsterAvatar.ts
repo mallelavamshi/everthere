@@ -2,7 +2,7 @@
 // No env, no file I/O: seed.ts passes in the Napster client, the signed picture URL and a state saver.
 import sharp from 'sharp';
 import type { NapsterClient } from '../../apps/api/src/napster/client';
-import { agentProviderSettings, companionDescription, companionReadiness, firstNameOf } from '../../apps/api/src/services/avatars';
+import { agentProviderSettings, agentResources, companionDescription, companionReadiness, firstNameOf } from '../../apps/api/src/services/avatars';
 import { buildAgentInstructions } from '../../packages/shared/src/prompt';
 import { isCustomVoice } from '../../packages/shared/src/domain';
 import { avatarId } from './fixture';
@@ -48,6 +48,8 @@ export type EnsureDeps = {
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;
   maxWaitMs?: number;
+  /** The shared FAQ collection and knowledge base ids (task 32); absent: not attached. */
+  resources?: { NAPSTER_FAQ_COLLECTION_ID?: string; NAPSTER_KNOWLEDGE_BASE_ID?: string };
 };
 
 /**
@@ -102,6 +104,7 @@ export async function ensureNapsterAvatar(
       mode: 'conversation',
       providerSettings: agentProviderSettings(buildAgentInstructions(firstNameOf(fullName(a)), title)),
       functions: d.flagFunctionId ? [d.flagFunctionId] : [],
+      ...agentResources(d.resources ?? {}),
     })
   ).id;
   rec.voiceId = voice;

@@ -1,4 +1,4 @@
-import { CUSTOM_VOICE_PREFIX, buildAgentInstructions } from '@everthere/shared';
+import { buildAgentInstructions, isCustomVoice } from '@everthere/shared';
 import type { Env } from '../env';
 import type { NapsterClient, ProviderSettings } from '../napster/client';
 import { MEDIA_URL_TTL_MS, signMediaUrl } from '../routes/media';
@@ -57,6 +57,23 @@ export const agentProviderSettings = (instructions: string): ProviderSettings =>
   temperature: 0.6,
   noiseReduction: { ...AGENT_AUDIO.noiseReduction },
 });
+
+/**
+ * What every agent carries besides its prompt (task 32), for new agents here and in the seed and for the agent sync:
+ * - the shared FAQ collection (gentle, rule-keeping answers to what children ask) and knowledge base (calm-down
+ *   stories and breathing games), when their ids are configured;
+ * - no Napster idle timeout: a child resting quietly at nap time must not be cut off after 3 minutes; our own
+ *   10-minute cap (LIMITS.sessionMaxMs) ends every call.
+ */
+export function agentResources(env: Partial<Pick<Env, 'NAPSTER_FAQ_COLLECTION_ID' | 'NAPSTER_KNOWLEDGE_BASE_ID'>>): {
+  disableIdleTimeout: true;
+  faqCollections?: string[];
+  knowledgeBaseId?: string;
+} {
+  const faq = env.NAPSTER_FAQ_COLLECTION_ID?.trim();
+  const kb = env.NAPSTER_KNOWLEDGE_BASE_ID?.trim();
+  return { disableIdleTimeout: true, ...(faq ? { faqCollections: [faq] } : {}), ...(kb ? { knowledgeBaseId: kb } : {}) };
+}
 
 export const firstNameOf = (fullName: string): string => fullName.trim().split(/\s+/)[0] || 'Parent';
 
@@ -120,11 +137,12 @@ export async function advanceAvatar(env: Env, napster: AvatarNapster, avatar: Av
       companionId: avatar.napster_companion_id!,
       name: `everthere-${avatar.id}-${avatar.napster_companion_id!.slice(-6)}`,
       // A digital twin's own cloned voice (`custom:<id>`) is not a stock voice: omit voiceId and the twin speaks with it.
-      ...(avatar.voice_id.startsWith(CUSTOM_VOICE_PREFIX) ? {} : { voiceId: avatar.voice_id }),
+      ...(isCustomVoice(avatar.voice_id) ? {} : { voiceId: avatar.voice_id }),
       language: 'en',
       mode: 'conversation',
       providerSettings: agentProviderSettings(buildAgentInstructions(firstNameOf(owner?.name ?? ''), avatar.parent_title)),
       functions: flagId ? [flagId] : [],
+      ...agentResources(env),
     }));
   } catch (e) {
     console.error('createAgent failed', avatar.id, e);
@@ -146,7 +164,7 @@ export async function advanceAvatar(env: Env, napster: AvatarNapster, avatar: Av
         .bind(agentId, avatar.id, avatar.napster_companion_id)
         .run();
       if (r2.meta.changes) {
-        if (cur.voice_id && !cur.voice_id.startsWith(CUSTOM_VOICE_PREFIX)) await napster.patchAgent(agentId, { voiceId: cur.voice_id }).catch((e) => console.error('voice patch failed', avatar.id, e));
+        if (cur.voice_id && !isCustomVoice(cur.voice_id)) await napster.patchAgent(agentId, { voiceId: cur.voice_id }).catch((e) => console.error('voice patch failed', avatar.id, e));
         return (await loadAvatar(env, avatar.id)) ?? avatar;
       }
     }

@@ -8,6 +8,9 @@ export interface Env {
   // vars
   PUBLIC_API_BASE: string;
   NAPSTER_FLAG_FUNCTION_ID: string;
+  /** Shared FAQ collection and knowledge base attached to every agent (task 32); empty: not attached. */
+  NAPSTER_FAQ_COLLECTION_ID?: string;
+  NAPSTER_KNOWLEDGE_BASE_ID?: string;
   DEV_ROUTES?: string;
   SPIKE_AGENT_ID?: string; // dev only: agent for POST /api/dev/napster-token (DEV_ROUTES=1)
   CLERK_AUTHORIZED_PARTIES?: string; // optional comma-separated azp allowlist

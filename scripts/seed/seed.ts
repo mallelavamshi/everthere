@@ -313,6 +313,14 @@ function flagFunctionId(): string {
   return id;
 }
 
+/** A `[vars]` value: the environment wins, else apps/api/wrangler.toml, else empty. */
+function wranglerVar(name: string): string {
+  const fromEnv = process.env[name]?.trim();
+  if (fromEnv) return fromEnv;
+  const m = new RegExp(`^${name}\\s*=\\s*"(.*)"`, 'm').exec(readFileSync(path.join(API_DIR, 'wrangler.toml'), 'utf8'));
+  return m?.[1] ?? '';
+}
+
 async function napsterAvatars(state: State): Promise<void> {
   const n = makeNapster(need('NAPSTER_API_KEY'));
   const flagId = flagFunctionId();
@@ -323,6 +331,7 @@ async function napsterAvatars(state: State): Promise<void> {
       napster: n,
       pictureUrl: () => signedUrl(state.keys[a.key]!),
       flagFunctionId: flagId,
+      resources: { NAPSTER_FAQ_COLLECTION_ID: wranglerVar('NAPSTER_FAQ_COLLECTION_ID'), NAPSTER_KNOWLEDGE_BASE_ID: wranglerVar('NAPSTER_KNOWLEDGE_BASE_ID') },
       save: (r) => {
         state.napster[a.key] = { ...r };
         saveState(state);
