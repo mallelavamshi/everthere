@@ -52,6 +52,12 @@ describe('comforting method (task 32)', () => {
     expect(s.indexOf('RULES (always first')).toBeGreaterThan(s.indexOf('HOW TO COMFORT'));
     expect(s).toMatch(/the rules above always win\.$/);
   });
+  test('the flag tool is called first, in the same turn, even for a small bump (it was being skipped live)', () => {
+    expect(s).toMatch(/SAFETY TOOL/);
+    expect(s).toMatch(/call flag_concern FIRST/);
+    expect(s).toMatch(/small bump/);
+    expect(s.indexOf('SAFETY TOOL')).toBeLessThan(s.indexOf('HOW TO COMFORT'));
+  });
   test('works for any parent title', () => {
     expect(buildAgentInstructions('Vamshi','Daddy')).toContain('You are Daddy (Vamshi)');
   });

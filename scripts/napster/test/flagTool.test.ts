@@ -22,6 +22,10 @@ function fakeNapster(initial: Fn[]) {
 }
 
 describe('flag_concern definition', () => {
+  it('tells the model to call it at once, even for a small bump', () => {
+    expect(flagFunctionDef.data.description).toMatch(/immediately/);
+    expect(flagFunctionDef.data.description).toMatch(/small/);
+  });
   it("asks for the child's exact words in quote", () => {
     expect(flagFunctionDef.data.parameters.properties.quote).toEqual({ type: 'string', description: "the child's exact words, verbatim" });
   });

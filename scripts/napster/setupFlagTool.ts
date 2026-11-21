@@ -15,7 +15,7 @@ const NAME = 'flag_concern';
 export const flagFunctionDef = {
   data: {
     name: NAME,
-    description: 'Call whenever the child mentions pain, injury, illness, being hit, being scared of a person, or anything unsafe.',
+    description: 'Call immediately, before replying, whenever the child mentions pain or getting hurt (even a small bump or fall), illness, being hit, being scared of a person, or anything unsafe. Alerts the grown-up and the parent.',
     parameters: {
       type: 'object',
       properties: {
