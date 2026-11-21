@@ -15,7 +15,9 @@ const mark = svg.slice(svg.indexOf(bgRect) + bgRect.length, svg.lastIndexOf('</s
 const wrap = (body) => `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">${defs}${body}</svg>`;
 const scaled = (s) => `<g transform="translate(512 512) scale(${s}) translate(-512 -512)">${mark}</g>`;
 
-const BG = wrap(bgRect);
+// The launcher mask shows only the centre 72/108 of the background, so the adaptive gradient is drawn tighter
+// (radius 75% -> 50%) to keep the lavender edge visible, as in the designed icon.
+const BG = wrap(bgRect).replace('r="75%"', 'r="50%"');
 const FG = wrap(scaled(0.8)); // adaptive: the mask shows the centre ~2/3, so the mark is a bit smaller
 const FULL = wrap(bgRect + scaled(1)); // legacy and store: as designed
 
