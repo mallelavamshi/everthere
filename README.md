@@ -4,7 +4,7 @@
 
 EverThere is an Android app that lets a parent comfort their young child from anywhere. A parent turns their own photo into a live, talking avatar on Napster, then teaches it how they comfort their child: nicknames, tone, favorite things, a song, and topics to avoid. When the child is upset at daycare or with a nanny, the caregiver opens a short live call with "Mommy" or "Daddy" on the screen. Afterward the parent gets a summary, the mood before and after, and any moment that was flagged. Safety is designed in from the first line of the prompt.
 
-Built for the Napster x Microsoft Azure Hackathon. **Live API:** https://everthere-api.m-vamshikrishna22.workers.dev
+Built for the Napster x Microsoft Azure Hackathon. **Try it in a browser:** https://everthere-web.m-vamshikrishna22.workers.dev (or install the [Android APK](https://github.com/mallelavamshi/everthere-app/releases/latest)). **Live API:** https://everthere-api.m-vamshikrishna22.workers.dev
 
 **Judges: start at [`docs/submission/judges.md`](docs/submission/judges.md).** It has the APK link and a two-minute tour. Written summary: [`docs/submission/summary.md`](docs/submission/summary.md). Demo video: [`docs/marketing/video/everthere-demo-16x9.mp4`](docs/marketing/video/everthere-demo-16x9.mp4). Video storyboard: [`docs/submission/demo-script.md`](docs/submission/demo-script.md).
 
@@ -136,7 +136,7 @@ Full one-time setup (D1, R2, Clerk dashboard, Napster webhook, demo seed, smoke 
 | **Mostly stock voices** | Mia's Daddy uses the maker's own cloned voice through his Napster digital twin. The other demo parents use stock voices, and parents who sign up pick a stock voice: in-app voice cloning is on the roadmap (the Napster Recordings API wasn't enabled for preview clips). |
 | **Softer lip-sync** | Avatars use Napster's v1 photo mode, so lip-sync is softer than v2 video avatars. |
 | **No push notifications when the app is closed** | Alerts appear in the in-app Alerts center, and as local notifications while the app is open or resumes. Push is a roadmap item. |
-| **Android only** | iOS is a roadmap item. |
+| **Android app, plus the web** | The same app runs in any browser at the web link, built from the same code (`apps/mobile/wrangler.web.toml`). A native iOS app is a roadmap item. |
 | **"Our song" isn't word for word** | The avatar is asked to sing or say the saved song, and the model may paraphrase it. |
 | **Shared demo budget** | Demo use is capped so the shared account can't run out of credits. |
 

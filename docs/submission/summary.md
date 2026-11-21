@@ -2,7 +2,7 @@
 
 ## What we built
 
-EverThere is an Android app that puts a parent's live AI avatar on a caregiver's screen when a young child is upset. A parent turns one photo into a talking avatar and writes a comfort plan for each child: nicknames, tone, favorite things, a song, and topics never to raise. When a toddler cries at drop-off or nap time, the teacher or nanny taps the child, picks a reason ("Missing Mommy", "Got a boo-boo"), and starts a short live call with Mommy or Daddy. Afterward the parent gets a summary, the child's mood before and after, the transcript, and any flagged moment.
+EverThere is an Android and web app that puts a parent's live AI avatar on a caregiver's screen when a young child is upset. A parent turns one photo into a talking avatar and writes a comfort plan for each child: nicknames, tone, favorite things, a song, and topics never to raise. When a toddler cries at drop-off or nap time, the teacher or nanny taps the child, picks a reason ("Missing Mommy", "Got a boo-boo"), and starts a short live call with Mommy or Daddy. Afterward the parent gets a summary, the child's mood before and after, the transcript, and any flagged moment.
 
 ## The problem
 
@@ -26,12 +26,13 @@ Napster runs each conversation on Azure OpenAI realtime.
 - **Stack.** Capacitor and React, with a Hono API on Cloudflare Workers, D1, R2 (private photos, short-lived signed links), Cron and Clerk.
 - **Safeguards.** Every permission is enforced on the server. No child call starts until the parent has test-called and approved their avatar. A caregiver is always present, and calls cap at 10 minutes.
 - **Two-layer flags.** Concerns are caught live and again in a post-call sweep.
-- **Tests.** 1,027 automated tests pass.
+- **Tests.** 1,119 automated tests pass.
 
 ## Try it
 
-- Demo video (2:46): *[video link]*
+- Web app: https://everthere-web.m-vamshikrishna22.workers.dev
 - APK and judge guide: https://github.com/mallelavamshi/everthere-app
-- Source: *[source repository link]*
+- Source: https://github.com/mallelavamshi/everthere
+- Demo video: *[video link]*
 
 Tap **Try the demo** to join as Sarah (a parent) or Ms. Jess (a teacher). No account needed.
