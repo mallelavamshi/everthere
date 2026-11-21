@@ -1,0 +1,133 @@
+{
+ "duration": 156.407,
+ "segments": [
+  {
+   "label": "open",
+   "from": 0.0,
+   "to": 8.0,
+   "speed": 1.0,
+   "outStart": 0.0,
+   "outEnd": 8.0
+  },
+  {
+   "label": "teacher",
+   "from": 29.2,
+   "to": 36.6,
+   "speed": 1.0,
+   "outStart": 8.0,
+   "outEnd": 15.4
+  },
+  {
+   "label": "pick",
+   "from": 36.6,
+   "to": 43.7,
+   "speed": 1.0,
+   "outStart": 15.4,
+   "outEnd": 22.5
+  },
+  {
+   "label": "dialing",
+   "from": 43.7,
+   "to": 47.6,
+   "speed": 1.0,
+   "outStart": 22.5,
+   "outEnd": 26.4
+  },
+  {
+   "label": "live",
+   "from": 53.6,
+   "to": 54.0,
+   "speed": 1.0,
+   "outStart": 26.4,
+   "outEnd": 26.8
+  },
+  {
+   "label": "call",
+   "from": 54.0,
+   "to": 77.7,
+   "speed": 1.0,
+   "outStart": 26.8,
+   "outEnd": 50.5
+  },
+  {
+   "label": "call",
+   "from": 83.35,
+   "to": 99.1,
+   "speed": 1.0,
+   "outStart": 50.5,
+   "outEnd": 66.25
+  },
+  {
+   "label": "call",
+   "from": 106.02,
+   "to": 123.3,
+   "speed": 1.0,
+   "outStart": 66.25,
+   "outEnd": 83.53
+  },
+  {
+   "label": "call",
+   "from": 132.4,
+   "to": 146.95,
+   "speed": 1.0,
+   "outStart": 83.53,
+   "outEnd": 98.08
+  },
+  {
+   "label": "call",
+   "from": 154.74,
+   "to": 166.0,
+   "speed": 1.0,
+   "outStart": 98.08,
+   "outEnd": 109.34
+  },
+  {
+   "label": "end",
+   "from": 176.3,
+   "to": 180.0,
+   "speed": 1.0,
+   "outStart": 109.34,
+   "outEnd": 113.04
+  },
+  {
+   "label": "checkin",
+   "from": 182.6,
+   "to": 190.4,
+   "speed": 1.0,
+   "outStart": 113.04,
+   "outEnd": 120.84
+  },
+  {
+   "label": "switch",
+   "from": 193.6,
+   "to": 202.0,
+   "speed": 1.4,
+   "outStart": 120.84,
+   "outEnd": 126.84
+  },
+  {
+   "label": "home",
+   "from": 202.0,
+   "to": 207.5,
+   "speed": 1.0,
+   "outStart": 126.84,
+   "outEnd": 132.34
+  },
+  {
+   "label": "alerts",
+   "from": 266.8,
+   "to": 276.2,
+   "speed": 1.0,
+   "outStart": 132.34,
+   "outEnd": 141.74
+  },
+  {
+   "label": "transcript",
+   "from": 278.6,
+   "to": 300.6,
+   "speed": 1.5,
+   "outStart": 141.74,
+   "outEnd": 156.407
+  }
+ ]
+}

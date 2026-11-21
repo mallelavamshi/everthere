@@ -1,0 +1,30 @@
+// Short take of the parent screens (Sarah): alerts, the newest session's summary and transcript. Run after demo.mjs.
+import { spawn, spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { click, connect, evaluate, text } from './cdp.mjs';
+const take = process.argv[2] ?? 'parent1';
+const OUT = path.resolve(import.meta.dirname, '../out/demo');
+const SERIAL = 'adb-R5CY12KVHMD-CNOGdt._adb-tls-connect._tcp';
+const ADB = 'V:/android-sdk/platform-tools/adb.exe';
+const SCRCPY = 'V:/tools/scrcpy-v5.0.1/scrcpy-win64-v5.0.1/scrcpy.exe';
+const logFile = path.join(OUT, `${take}.log`); fs.writeFileSync(logFile, '');
+let t0 = Date.now();
+const log = (m) => { const l = `${((Date.now() - t0) / 1000).toFixed(2)}\t${m}`; console.log(l); fs.appendFileSync(logFile, l + '\n'); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const tap = async (re, wait) => { log(await click(re)); await sleep(wait); };
+const scroll = (px) => evaluate(`(() => { const s = [...document.querySelectorAll('*')].find(e => e.scrollHeight > e.clientHeight + 40 && /auto|scroll/.test(getComputedStyle(e).overflowY)); (s || document.scrollingElement).scrollBy({ top: ${px}, behavior: 'smooth' }); return !!s; })()`);
+await connect();
+await tap('^\s*Back', 1500); await tap('Home', 2500);
+const rec = spawn(SCRCPY, ['-s', SERIAL, '--no-window', '--no-control', `--record=${path.join(OUT, take + '.mkv')}`, '--max-fps=30', '--video-bit-rate=14M', '--no-audio', '--time-limit=48'], { env: { ...process.env, ADB }, stdio: 'ignore' });
+await sleep(2500); t0 = Date.now(); log('REC start');
+await sleep(2500);
+await tap('Alerts', 7000);
+await scroll(500); await sleep(2500);
+await tap('^\s*Back', 2500);
+await tap('Sessions', 3500);
+log(await evaluate(`(() => { const a = [...document.querySelectorAll('a,button,[role=button]')].find(e => /Mia felt better/.test(e.innerText)); if (!a) return 'no session'; a.click(); return 'opened newest'; })()`));
+await sleep(5000);
+for (let i = 0; i < 7; i++) { await scroll(240); await sleep(1600); }
+await sleep(2500);
+log('END'); await new Promise((r) => rec.on('exit', r)); log('saved'); process.exit(0);

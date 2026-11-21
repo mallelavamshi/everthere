@@ -1,0 +1,38 @@
+{
+  "s01": {
+    "scene": "01-daycare-tablet-mia-mommy", "pick": 2,
+    "prompt": "A realistic, gentle handheld shot in a busy daycare classroom. The teary little girl in the foreground sniffles, then slowly lifts her eyes toward the tablet the kind teacher holds up for her; her face softens and a small hopeful smile starts through her tears. The teacher smiles warmly and nods. Other toddlers keep playing softly in the background. The tablet stays steady, facing the girl, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion, soft daylight."
+  },
+  "s02": {
+    "scene": "02-daycare-tablet-leo-daddy", "pick": 2,
+    "prompt": "A realistic, gentle handheld shot in a daycare classroom. The little boy in the foreground stops fidgeting and watches the tablet his teacher holds up at his eye level; he leans in a little and his mouth opens as if answering. The blonde teacher smiles encouragingly. Children play quietly in the background. The tablet stays steady, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  },
+  "s03": {
+    "scene": "03-daycare-phone-mia-daddy", "pick": 2,
+    "prompt": "A realistic, gentle handheld shot in a daycare classroom. The sad little girl looks at the phone the teacher holds steady at her eye level, nods slowly, and talks softly to it; her expression eases. The blonde teacher watches her kindly. Background children play, slightly out of focus. The phone stays steady and upright, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  },
+  "s04": {
+    "scene": "04-daycare-phone-ava-mommy", "pick": 1,
+    "prompt": "A realistic, gentle handheld shot in a daycare classroom. The teary little girl takes a slow deep breath in and out while looking at the phone, copying it, and her shoulders relax; she wipes her cheek. The teacher holds the phone steady and smiles softly. The phone stays upright, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  },
+  "s05": {
+    "scene": "05-home-nanny-tablet-leo-daddy", "pick": 2,
+    "prompt": "A realistic, calm shot from behind a sofa in a warm living room. The nanny and the little boy lean in together toward the tablet she holds; the boy's shoulders relax and he rests against her a little. Soft afternoon light, very gentle camera drift. The tablet stays steady, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  },
+  "s06": {
+    "scene": "06-home-nanny-phone-sam-mama", "pick": 1,
+    "prompt": "A realistic, quiet shot in a child's bedroom at nap time. The little girl holds the phone and looks at it, her eyelids getting heavy as she calms down and slowly rests her head; the nanny on the bed smiles gently. Soft curtain light. The phone stays upright and steady, its screen a flat uniform bright green the whole time. Natural, slow, lifelike motion."
+  },
+  "s07": {
+    "scene": "07-mom-home-phone", "pick": 2,
+    "prompt": "A realistic, calm over-the-shoulder shot at a home kitchen table. The mother reads her phone, exhales with relief and smiles tenderly; steam rises from her tea. Very gentle camera drift. The phone stays steady in her hand, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  },
+  "s08": {
+    "scene": "08-dad-office-phone", "pick": 2,
+    "prompt": "A realistic over-the-shoulder shot in a bright office. The father pauses work, glances down at his phone, and a warm relieved smile spreads across his face; he nods slightly. Very gentle camera drift. The phone stays steady in his hand, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  },
+  "s10": {
+    "scene": "10-mom-office-phone", "pick": 3,
+    "prompt": "A realistic over-the-shoulder shot in a bright open-plan office by a window. The mother reads her phone, smiles gently, then looks up and out of the window for a moment, content. Very gentle camera drift. The phone stays steady in her hand, its screen a flat uniform bright green the whole time. Natural, subtle, lifelike motion."
+  }
+}

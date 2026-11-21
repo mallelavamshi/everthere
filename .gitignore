@@ -14,3 +14,6 @@ scripts/seed/out/
 docs/notes/spike/*.png
 !docs/notes/spike/evidence-*.png
 scripts/marketing/out/
+scripts/marketing/video/node_modules/
+scripts/marketing/video/public/clips/
+scripts/marketing/video/out/
