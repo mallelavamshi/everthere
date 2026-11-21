@@ -6,7 +6,7 @@ EverThere is an Android app that lets a parent comfort their young child from an
 
 Built for the Napster x Microsoft Azure Hackathon. **Live API:** https://everthere-api.m-vamshikrishna22.workers.dev
 
-**Judges: start at [`docs/submission/judges.md`](docs/submission/judges.md).** It has the APK link and a two-minute tour. Video storyboard: [`docs/submission/demo-script.md`](docs/submission/demo-script.md).
+**Judges: start at [`docs/submission/judges.md`](docs/submission/judges.md).** It has the APK link and a two-minute tour. Written summary: [`docs/submission/summary.md`](docs/submission/summary.md). Demo video: [`docs/marketing/video/everthere-demo-16x9.mp4`](docs/marketing/video/everthere-demo-16x9.mp4). Video storyboard: [`docs/submission/demo-script.md`](docs/submission/demo-script.md).
 
 ## The problem
 
@@ -54,9 +54,13 @@ One Android app whose home screen depends on who signs in. One Hono API on Cloud
 | Napster feature | How EverThere uses it |
 | --- | --- |
 | **Companions from a photo** | A parent's photo (kept in private R2, served through a short-lived signed URL) becomes a Napster companion, using v1 photo mode. |
-| **Agents with locked instructions** | Each parent avatar is a Napster agent in `conversation` mode. The Worker builds the system prompt. Locked safety rules always come first, then the parent's plan. Parents never edit raw prompt text. |
+| **Agents with locked instructions** | Each parent avatar is a Napster agent in `conversation` mode. The Worker builds the system prompt. The instructions teach a child-comfort method (connect, name the feeling, breathe, redirect, hand back to the grown-up) and end with locked safety rules that always win over anything else the agent is told. Parents never edit raw prompt text. |
 | **Per-child memory** | Every session passes `externalClientId`, a hash of the child's id (first 32 characters of base64url SHA-256). Napster keys memory on companion plus client id, so each parent avatar remembers each child, and no raw id leaves the API. |
 | **Implicit flag tool** | The agent has an implicit `flag_concern(category, quote, severity)` function. When the child says something like "I fell and hurt my knee", Napster delivers the call to the app, which shows a banner, posts the flag to the API (the parent is alerted at once), and returns the function output. |
+| **Digital twin** | Mia's Daddy in the demo is the maker's own Napster digital twin: their real face and cloned voice, recorded with a self-consent record. Leaving `voiceId` out uses the twin's cloned voice. |
+| **Per-call context** | Each connection carries an `externalClientProfile` (the child, why this call is happening, who is holding the screen, where the child is) and `initialSpeech` guidance, so the avatar opens on the reason for the call. |
+| **FAQ collection and knowledge base** | Every agent is attached to an FAQ collection of 20 gentle answers to questions children ask ("When are you coming?") and a calm-corner knowledge base of breathing games and short stories (`pnpm napster:knowledge`). |
+| **No idle timeout, camera off** | Agents set `disableIdleTimeout`, since a crying child may say nothing for a while. Every connection forces `videoPolicy: deferred`, so the child's camera is never sent. |
 | **Webhooks** | Napster's `session.closed` webhook (signature verified, de-duplicated by event id) triggers the summary pipeline. A cron sweep covers a missed webhook. |
 | **Transcripts and cost** | The Worker fetches the session transcript and cost from Napster after the call, for the summary and for the credit guard. |
 | **Azure OpenAI realtime** | Napster's managed tier runs the conversation on Azure OpenAI realtime, so the live voice and reasoning come through Napster on Microsoft Azure. The voice is picked from the stock Azure OpenAI voices. |
@@ -138,4 +142,4 @@ Full one-time setup (D1, R2, Clerk dashboard, Napster webhook, demo seed, smoke 
 
 ## Credits
 
-Built with [Napster](https://napster.ai) live avatars and agents on Azure OpenAI realtime, the Meta Model API, Clerk, Cloudflare Workers, D1 and R2, Capacitor, React, Vite, Tailwind, Hono and Drizzle. Made for the Napster x Microsoft Azure Hackathon. Every face in the demo is AI-generated and no real person is depicted.
+Built with [Napster](https://napster.ai) live avatars and agents on Azure OpenAI realtime, the Meta Model API, Clerk, Cloudflare Workers, D1 and R2, Capacitor, React, Vite, Tailwind, Hono and Drizzle. Made for the Napster x Microsoft Azure Hackathon. Every face in the demo is AI-generated except Mia's Daddy, who is the maker's own Napster digital twin, used with their consent.
