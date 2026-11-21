@@ -6,7 +6,7 @@ EverThere is an Android app that lets a parent comfort their young child from an
 
 Built for the Napster x Microsoft Azure Hackathon. **Try it in a browser:** https://everthere-web.m-vamshikrishna22.workers.dev (or install the [Android APK](https://github.com/mallelavamshi/everthere-app/releases/latest)). **Live API:** https://everthere-api.m-vamshikrishna22.workers.dev
 
-**Judges: start at [`docs/submission/judges.md`](docs/submission/judges.md).** It has the APK link and a two-minute tour. Written summary: [`docs/submission/summary.md`](docs/submission/summary.md). Demo video: [`docs/marketing/video/everthere-demo-16x9.mp4`](docs/marketing/video/everthere-demo-16x9.mp4). Video storyboard: [`docs/submission/demo-script.md`](docs/submission/demo-script.md).
+**Judges: start at [`docs/submission/judges.md`](docs/submission/judges.md).** It has the APK link and a two-minute tour. Written summary: [`docs/submission/summary.md`](docs/submission/summary.md). Demo video: [YouTube](https://www.youtube.com/watch?v=8u4zYBWxMKQ). Video storyboard: [`docs/submission/demo-script.md`](docs/submission/demo-script.md).
 
 ## The problem
 
