@@ -4,6 +4,8 @@ export interface ErrorViewInput {
   mode: 'test' | 'child';
   childName?: string;
   parentTitle?: string;
+  /** Running in a browser (the hosted web build), not the Android app: permission help points at the browser. */
+  web?: boolean;
 }
 
 export interface ErrorView {
@@ -59,7 +61,9 @@ export function errorView(code: string | undefined, who: ErrorViewInput): ErrorV
       return {
         asset: 'onboarding.avatarVoice',
         title: 'We need the microphone',
-        body: `So ${who.parentTitle?.trim() || 'the avatar'} can hear, EverThere needs the microphone. Open your phone's Settings → Apps → EverThere → Permissions → Microphone, choose "Allow while using the app", then come back and tap Try again.`,
+        body: who.web
+          ? `So ${who.parentTitle?.trim() || 'the avatar'} can hear, EverThere needs the microphone. Click the microphone or lock icon in the address bar, choose Allow, then tap Try again.`
+          : `So ${who.parentTitle?.trim() || 'the avatar'} can hear, EverThere needs the microphone. Open your phone's Settings → Apps → EverThere → Permissions → Microphone, choose "Allow while using the app", then come back and tap Try again.`,
         retry: true,
       };
     case 'INVALID':

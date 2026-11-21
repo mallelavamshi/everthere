@@ -1,0 +1,9 @@
+# The hosted web build of the app, for judges without an Android device: the same React bundle the APK ships,
+# served as static assets. Deploy: pnpm --filter mobile build && npx wrangler deploy -c wrangler.web.toml
+# The API allows this origin in APP_ORIGINS (apps/api/src/index.ts) and CLERK_AUTHORIZED_PARTIES.
+name = "everthere-web"
+compatibility_date = "2026-11-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

@@ -46,7 +46,8 @@ export type CreateAppOptions = {
 };
 
 /** Origins of the mobile WebView (Capacitor). */
-export const APP_ORIGINS = ['https://localhost', 'capacitor://localhost'] as const;
+// The Capacitor WebView origins, plus the hosted web build judges can open in a browser (apps/mobile/wrangler.web.toml).
+export const APP_ORIGINS = ['https://localhost', 'capacitor://localhost', 'https://everthere-web.m-vamshikrishna22.workers.dev'] as const;
 
 export function createApp(opts: CreateAppOptions = {}) {
   const app = new Hono<AppEnv>();

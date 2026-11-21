@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Button, EmptyState } from '../../ui';
 import { errorView } from '../errorViews';
 
@@ -12,7 +13,7 @@ export function FullScreen({ children }: { children: ReactNode }) {
 }
 
 export function LiveError({ code, mode, childName, parentTitle, onRetry, onBack }: { code?: string; mode: 'test' | 'child'; childName?: string; parentTitle: string; onRetry: () => void; onBack: () => void }) {
-  const v = errorView(code, { mode, childName, parentTitle });
+  const v = errorView(code, { mode, childName, parentTitle, web: !Capacitor.isNativePlatform() });
   return (
     <div className="flex flex-col items-center">
       <EmptyState asset={v.asset} title={v.title} body={v.body} action={v.retry ? { label: 'Try again', onClick: onRetry } : undefined} />

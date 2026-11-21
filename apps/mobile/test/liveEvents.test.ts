@@ -127,6 +127,12 @@ describe('errorView (friendly full-screen states)', () => {
     expect(v.body).toMatch(/Microphone/);
     expect(v.retry).toBe(true);
   });
+  it('MIC_BLOCKED in a browser points at the address bar, not phone settings', () => {
+    const v = errorView('MIC_BLOCKED', { ...who, web: true });
+    expect(v.body).toMatch(/address bar/);
+    expect(v.body).not.toMatch(/phone's Settings/);
+    expect(v.retry).toBe(true);
+  });
   it('CONNECT_TIMEOUT is a network-style state with Try again', () => {
     const v = errorView('CONNECT_TIMEOUT', who);
     expect(v.asset).toBe('empty.offline');

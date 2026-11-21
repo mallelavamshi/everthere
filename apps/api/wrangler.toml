@@ -22,7 +22,7 @@ crons = ["*/2 * * * *", "0 8 * * *"]
 [vars]
 PUBLIC_API_BASE = "https://everthere-api.m-vamshikrishna22.workers.dev"
 NAPSTER_FLAG_FUNCTION_ID = "flag_concern"
-CLERK_AUTHORIZED_PARTIES = "https://localhost"
+CLERK_AUTHORIZED_PARTIES = "https://localhost,https://everthere-web.m-vamshikrishna22.workers.dev"
 DEV_ROUTES = "0"
 NAPSTER_FAQ_COLLECTION_ID = "78a5b1d6-6915-4225-84a6-951fdc5e6b15"
 NAPSTER_KNOWLEDGE_BASE_ID = "175aa4c2-ed4f-4c4e-9cf9-261c765abb7b"

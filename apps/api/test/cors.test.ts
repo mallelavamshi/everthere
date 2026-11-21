@@ -23,6 +23,16 @@ describe('CORS for the Capacitor WebView', () => {
     expect(anon.headers.get('Access-Control-Allow-Origin')).toBe('capacitor://localhost');
   });
 
+  it('answers the hosted web build (judges in a browser)', async () => {
+    const { request } = makeApp();
+    const res = await request('/api/me', {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://everthere-web.m-vamshikrishna22.workers.dev', 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'authorization' },
+    });
+    expect(res.status).toBe(204);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://everthere-web.m-vamshikrishna22.workers.dev');
+  });
+
   it('does not allow other origins', async () => {
     const { request } = makeApp();
     const res = await request('/api/health', { headers: { Origin: 'https://evil.example' } });
