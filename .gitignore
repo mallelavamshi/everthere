@@ -17,3 +17,5 @@ scripts/marketing/out/
 scripts/marketing/video/node_modules/
 scripts/marketing/video/public/clips/
 scripts/marketing/video/out/
+scripts/marketing/video/public/promo/
+scripts/marketing/video/public/music/

@@ -5,7 +5,7 @@ time (so the inserted screen doesn't jitter), warp the matching frame of the scr
 keep only the pixels that were green (fingers and bezels stay in front). Edge feather and green despill as in the
 stills (compose.py).
 
-Usage: python -I promo/key_screen.py <wan.mp4> <screen.mp4> <out.mp4> [--start 12.5] [--speed 1.0]
+Usage: python -I promo/key_screen.py <wan.mp4> <screen.mp4|screen.png> <out.mp4> [--start 12.5] [--speed 1.0]
   --start  seconds into the screen recording that line up with the clip's first frame
   --speed  playback speed of the screen recording (1.0 = real time)
 """
@@ -51,24 +51,45 @@ def main():
     ap.add_argument("out")
     ap.add_argument("--start", type=float, default=0.0)
     ap.add_argument("--speed", type=float, default=1.0)
+    ap.add_argument("--anchor3", action="store_true",
+                    help="the screen's bottom-right corner gets covered (a child's head): track the top-left, top-right "
+                         "and bottom-left extremes and carry the first frame's shape to place the hidden corner")
     a = ap.parse_args()
 
     clip, cfps = read_frames(a.wan)
-    cap = cv2.VideoCapture(a.screen)
-    sfps = cap.get(cv2.CAP_PROP_FPS) or 30
+    still = cv2.imread(a.screen) if a.screen.lower().endswith((".png", ".jpg", ".jpeg")) else None
+    cap = None if still is not None else cv2.VideoCapture(a.screen)
+    sfps = (cap.get(cv2.CAP_PROP_FPS) if cap else 30) or 30
     masks, qs = [], []
     for f in clip:
         m = green_mask(f)
         masks.append(m)
         qs.append(quad(m))
+    if a.anchor3:
+        def three(m):
+            ys, xs = np.nonzero(m)
+            p = np.stack([xs, ys], 1).astype(np.float32)
+            return np.array([p[np.argmin(p[:, 0] + p[:, 1])], p[np.argmax(p[:, 0] - p[:, 1])], p[np.argmax(p[:, 1] - p[:, 0])]], np.float32)
+        q0 = np.asarray(qs[0], np.float32)  # unoccluded first frame: TL, TR, BR, BL
+        src3 = np.array([q0[0], q0[1], q0[3]], np.float32)
+        out = []
+        for m in masks:
+            tl, tr, bl = three(m)
+            A = cv2.getAffineTransform(src3, np.array([tl, tr, bl], np.float32))
+            br = A @ np.array([q0[2][0], q0[2][1], 1.0], np.float32)
+            out.append(np.array([tl, tr, br, bl], np.float32))
+        qs = out
     qs = smooth_quads(qs)
 
     h, w = clip[0].shape[:2]
     vw = cv2.VideoWriter(a.out + ".tmp.mp4", cv2.VideoWriter_fourcc(*"mp4v"), cfps, (w, h))
     for i, (f, m, q) in enumerate(zip(clip, masks, qs)):
         t = a.start + i / cfps * a.speed
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(round(t * sfps)))
-        ok, shot = cap.read()
+        if still is not None:  # a real screenshot of the app (when no screen recording is available)
+            ok, shot = True, still.copy()
+        else:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, int(round(t * sfps)))
+            ok, shot = cap.read()
         if not ok:
             vw.write(f)
             continue
