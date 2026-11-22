@@ -1,11 +1,12 @@
 import type { AssetKey } from '../assets/manifest';
+import type { AppPlatform } from '../lib/platform';
 
 export interface ErrorViewInput {
   mode: 'test' | 'child';
   childName?: string;
   parentTitle?: string;
-  /** Running in a browser (the hosted web build), not the Android app: permission help points at the browser. */
-  web?: boolean;
+  /** Where the app runs: permission help points at the browser, iOS Settings or Android app settings (the default). */
+  platform?: AppPlatform;
 }
 
 export interface ErrorView {
@@ -14,6 +15,13 @@ export interface ErrorView {
   body: string;
   /** Offer "Try again" (a fresh begin()). */
   retry: boolean;
+}
+
+function micBlockedBody(listener: string, platform: AppPlatform | undefined): string {
+  const why = `So ${listener} can hear, EverThere needs the microphone.`;
+  if (platform === 'web') return `${why} Click the microphone or lock icon in the address bar, choose Allow, then tap Try again.`;
+  if (platform === 'ios') return `${why} Open your iPhone's Settings → EverThere, turn on Microphone, then come back and tap Try again.`;
+  return `${why} Open your phone's Settings → Apps → EverThere → Permissions → Microphone, choose "Allow while using the app", then come back and tap Try again.`;
 }
 
 /** Friendly full-screen copy for every way a live session can fail to start or be cut short. Never raw error text. */
@@ -61,9 +69,7 @@ export function errorView(code: string | undefined, who: ErrorViewInput): ErrorV
       return {
         asset: 'onboarding.avatarVoice',
         title: 'We need the microphone',
-        body: who.web
-          ? `So ${who.parentTitle?.trim() || 'the avatar'} can hear, EverThere needs the microphone. Click the microphone or lock icon in the address bar, choose Allow, then tap Try again.`
-          : `So ${who.parentTitle?.trim() || 'the avatar'} can hear, EverThere needs the microphone. Open your phone's Settings → Apps → EverThere → Permissions → Microphone, choose "Allow while using the app", then come back and tap Try again.`,
+        body: micBlockedBody(who.parentTitle?.trim() || 'the avatar', who.platform),
         retry: true,
       };
     case 'INVALID':

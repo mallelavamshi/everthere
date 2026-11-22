@@ -6,6 +6,7 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { colors } from '../theme/tokens';
+import { appPlatform } from './platform';
 import { sheetStack } from '../ui/sheetStack';
 import { toast } from '../ui/toast';
 
@@ -124,15 +125,21 @@ export function onAppEvent(name: AppEvent, cb: (e?: unknown) => void): () => voi
 }
 
 /**
- * Calls `cb` when the app really goes to the background: Capacitor `appStateChange` with `isActive:false`
- * (fired from Activity.onStop), or the page becoming hidden (web / fallback). Deliberately NOT the `pause`
- * event: Android fires onPause for any overlay, including the RECORD_AUDIO permission dialog, which would end
- * a call while the parent is tapping "Allow". `cb` may run twice for one backgrounding; make it idempotent.
+ * Calls `cb` when the app really goes to the background, or the page becomes hidden (web / fallback).
+ * Android: Capacitor `appStateChange` with `isActive:false` (fired from Activity.onStop), deliberately NOT `pause`:
+ * Android fires onPause for any overlay, including the RECORD_AUDIO permission dialog, which would end a call while
+ * the parent is tapping "Allow".
+ * iOS is the other way round: `appStateChange` isActive:false is willResignActive, which also fires for the mic
+ * permission alert, Control Center and the notification shade, while `pause` is didEnterBackground (really away).
+ * `cb` may run twice for one backgrounding; make it idempotent.
  */
 export function onAppBackground(cb: () => void): () => void {
-  const offState = onAppEvent('appStateChange', (e) => {
-    if ((e as { isActive?: boolean } | undefined)?.isActive === false) cb();
-  });
+  const offState =
+    appPlatform() === 'ios'
+      ? onAppEvent('pause', () => cb())
+      : onAppEvent('appStateChange', (e) => {
+          if ((e as { isActive?: boolean } | undefined)?.isActive === false) cb();
+        });
   const onVis = () => {
     if (document.visibilityState === 'hidden') cb();
   };

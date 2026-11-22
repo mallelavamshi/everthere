@@ -6,7 +6,11 @@ import { notificationPrimer, onNotificationTap, setPrimerAllowed, useNotificatio
 import { Button, Sheet } from '../ui';
 import { useSession } from './SessionContext';
 
-/** The friendly "why" shown once, right before the first notification would appear and Android asks for permission. */
+/** Platform-neutral: the same sheet comes before Android's and iOS's own permission prompt. */
+export const NOTIFICATION_PRIMER_BODY =
+  "We can tell you the moment your little one's summary is ready, or if something is worth a look. Your phone will ask you to allow it next.";
+
+/** The friendly "why" shown once, right before the first notification would appear and the OS asks for permission. */
 function NotificationPrimer() {
   const open = useNotificationPrimer();
   return (
@@ -25,9 +29,7 @@ function NotificationPrimer() {
         </div>
       }
     >
-      <p className="text-[16px] leading-relaxed">
-        We can tell you the moment your little one&apos;s summary is ready, or if something is worth a look. Android will ask you to allow it next.
-      </p>
+      <p className="text-[16px] leading-relaxed">{NOTIFICATION_PRIMER_BODY}</p>
       <p className="mt-2 text-[14px] text-mutedText">Either way, the bell in the app always shows what&apos;s new.</p>
     </Sheet>
   );

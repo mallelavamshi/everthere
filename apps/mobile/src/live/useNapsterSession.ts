@@ -473,8 +473,9 @@ export function useNapsterSession(opts: UseNapsterSessionOptions) {
     if (ctx.wobblyAt !== undefined) toast.info(WOBBLY_COPY);
   }, [ctx.wobblyAt]);
 
-  // Real backgrounding ends the call (a hidden app must not keep a child's call or the mic open). The Android
-  // `pause` event is not used: the RECORD_AUDIO permission dialog fires it. Never while that prompt is up.
+  // Real backgrounding ends the call (a hidden app must not keep a child's call or the mic open). onAppBackground
+  // skips the overlay events (Android `pause`, iOS willResignActive) that the mic permission prompt fires, and this
+  // also ignores everything while that prompt is up.
   useAppBackground(() => {
     if (micPendingRef.current || sdkStatusRef.current === 'permissionPending') return;
     const s = machineRef.current.state;

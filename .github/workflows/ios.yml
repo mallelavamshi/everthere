@@ -1,0 +1,93 @@
+# Unsigned iOS Simulator build of the EverThere app (apps/mobile), made on a GitHub macOS runner because there is no
+# Mac in the loop. Output: an artifact holding EverThere-simulator.zip (the zipped App.app), ready to upload to
+# Appetize.io or drag onto a local Simulator. No signing material is used or needed. See docs/ios.md.
+name: iOS simulator build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ios.yml'
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  simulator:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (mobile and its workspace deps only)
+        working-directory: .
+        run: pnpm install --frozen-lockfile --filter "mobile..."
+
+      # The two VITE_* values are public by design (the API URL and Clerk's publishable key are in every shipped
+      # bundle), but they live in repo secrets so they are not hard-coded here.
+      - name: Build the web app
+        env:
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+        run: pnpm build
+
+      - name: Copy it into the iOS project
+        run: pnpm exec cap sync ios
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Build for the iOS Simulator (unsigned)
+        run: |
+          status=0
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            build > ios/build-log.txt 2>&1 || status=$?
+          grep -E 'error:|\*\* BUILD' ios/build-log.txt | head -80 || true
+          if [ "$status" -ne 0 ]; then tail -60 ios/build-log.txt; exit "$status"; fi
+          test -d ios/build/Build/Products/Release-iphonesimulator/App.app
+
+      - name: Zip the .app
+        run: |
+          cd ios/build/Build/Products/Release-iphonesimulator
+          ditto -c -k --sequesterRsrc --keepParent App.app "$GITHUB_WORKSPACE/EverThere-simulator.zip"
+          ls -la "$GITHUB_WORKSPACE/EverThere-simulator.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EverThere-ios-simulator
+          path: EverThere-simulator.zip
+          if-no-files-found: error
+
+      - name: Keep the build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: apps/mobile/ios/build-log.txt
+          if-no-files-found: ignore
