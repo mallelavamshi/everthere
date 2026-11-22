@@ -33,7 +33,8 @@ allowed it. The Napster avatar needs no extra native code.
 ## Get the simulator build from CI
 
 The workflow `.github/workflows/ios.yml` ("iOS simulator build") runs on every push that touches `apps/mobile/**`,
-`packages/shared/**` or the lockfile. You can also start it by hand.
+`packages/shared/**` or the lockfile. You can also start it by hand. After building, it installs the app in an iPhone simulator and
+runs the Maestro smoke test, so a green run means the app also starts and signs in.
 
 1. Go to GitHub → **Actions** → **iOS simulator build**. To build now, click **Run workflow** and choose a branch.
 2. Open a green run. Under **Artifacts**, download **EverThere-ios-simulator**.
@@ -108,8 +109,13 @@ This repo does not try any of this yet. The CI workflow stays unsigned (`CODE_SI
     ([first green run](https://github.com/mallelavamshi/everthere/actions/runs/44991692505)).
   - The artifact was inspected: a universal simulator binary (x86_64 and arm64), the web bundle pointed at the
     deployed API, the three permission strings, and version 1.1.
-- Not verified: nothing has run on a real iPhone or in a simulator session yet. Still to check there:
-  - Clerk sign-in from the `capacitor://localhost` origin.
+  - The app runs in an iPhone simulator on CI. A Maestro test (`apps/mobile/e2e/ios-demo-parent.yaml`) starts the
+    app and taps **Try the demo** → **Peek as a Parent**. It then reaches the parent home, which needs Clerk sign-in
+    from `capacitor://localhost` and an authorized call to the deployed API
+    ([run with screenshots](https://github.com/mallelavamshi/everthere/actions/runs/44992370247), artifact
+    **EverThere-ios-screenshots**).
+- Not verified: nothing has run on a real iPhone. CI has no microphone, so the simulator test stops before a call.
+  Still to check on a device or in Appetize:
   - The microphone prompt and a live Napster call.
   - Audio routing to the speaker during a call.
   - Keeping the screen awake during a call. The Wake Lock API is only in recent iOS versions.
