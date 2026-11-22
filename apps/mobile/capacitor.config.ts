@@ -11,6 +11,9 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: { androidScheme: 'https' },
   android: { allowMixedContent: devHttpApi },
+  // iOS (WKWebView, origin capacitor://localhost): cream behind the page, like the Android window background, so
+  // there is no white flash before the first paint or behind the bounce at the edges.
+  ios: { backgroundColor: '#FFF8EC' },
   // Shrink the WebView above the keyboard so a sticky footer sits on top of it (iOS honours this; see lib/native.ts).
   plugins: { Keyboard: { resize: 'native' as unknown as KeyboardResize } },
 };

@@ -158,7 +158,7 @@ const BY_CODE: Record<string, FriendlyError> = {
   protect_check_required: { message: "We couldn't finish a quick security check on this device. Please try again in a moment 💛" },
   protect_check_timed_out: { message: "We couldn't finish a quick security check on this device. Please try again in a moment 💛" },
   protect_check_unsupported_environment: {
-    message: "We couldn't finish a quick security check on this device. Try updating Android System WebView, or sign up on another device and sign in here 💛",
+    message: "We couldn't finish a quick security check on this device. Try updating your phone's software, or sign up on another device and sign in here 💛",
   },
   captcha_invalid: { message: "We couldn't finish a quick security check on this device. Please try again in a moment 💛" },
 };

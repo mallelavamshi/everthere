@@ -26,7 +26,7 @@ No child call can start until a parent has completed a test call and approved th
 
 ```mermaid
 flowchart LR
-  App["Android app<br/>Capacitor + React + Vite + TS + Tailwind"]
+  App["Android + iOS app<br/>Capacitor + React + Vite + TS + Tailwind"]
   API["Hono API<br/>Cloudflare Workers"]
   D1[("D1")]
   R2[("R2 photos<br/>signed URLs")]
@@ -47,7 +47,7 @@ flowchart LR
   API -- "summaries, flag sweep" --> Meta
 ```
 
-One Android app whose home screen depends on who signs in. One Hono API on Cloudflare Workers with D1 for data, R2 for photos and Cron Triggers for sweeps (every 2 minutes) and the nightly demo reset (08:00 UTC). Roles live in D1 and every permission is enforced on the server, not just hidden in the UI.
+One app (Android, iOS and the web, from the same code) whose home screen depends on who signs in. One Hono API on Cloudflare Workers with D1 for data, R2 for photos and Cron Triggers for sweeps (every 2 minutes) and the nightly demo reset (08:00 UTC). Roles live in D1 and every permission is enforced on the server, not just hidden in the UI.
 
 ## How Napster is used
 
@@ -125,6 +125,9 @@ wrangler deploy
 VITE_API_BASE=https://everthere-api.<account>.workers.dev pnpm --filter mobile build
 pnpm --filter mobile cap:sync
 # then build and sign the release APK in Android Studio (apps/mobile/android)
+
+# iOS: no Mac needed. GitHub Actions (.github/workflows/ios.yml) builds an unsigned iOS Simulator app on every push
+# to apps/mobile and smoke-tests it in a simulator. Download it from the run's artifacts; see docs/ios.md.
 ```
 
 Full one-time setup (D1, R2, Clerk dashboard, Napster webhook, demo seed, smoke test) is in [`docs/notes/deploy-checklist.md`](docs/notes/deploy-checklist.md). Napster and Clerk behavior inside the Android WebView is documented in [`docs/notes/napster-events.md`](docs/notes/napster-events.md). The full design is in [`docs/superpowers/specs/2026-11-18-everthere-design.md`](docs/superpowers/specs/2026-11-18-everthere-design.md).
@@ -136,7 +139,7 @@ Full one-time setup (D1, R2, Clerk dashboard, Napster webhook, demo seed, smoke 
 | **Mostly stock voices** | Mia's Daddy uses the maker's own cloned voice through his Napster digital twin. The other demo parents use stock voices, and parents who sign up pick a stock voice: in-app voice cloning is on the roadmap (the Napster Recordings API wasn't enabled for preview clips). |
 | **Softer lip-sync** | Avatars use Napster's v1 photo mode, so lip-sync is softer than v2 video avatars. |
 | **No push notifications when the app is closed** | Alerts appear in the in-app Alerts center, and as local notifications while the app is open or resumes. Push is a roadmap item. |
-| **Android app, plus the web** | The same app runs in any browser at the web link, built from the same code (`apps/mobile/wrangler.web.toml`). A native iOS app is a roadmap item. |
+| **Android app, plus the web and an iOS Simulator build** | The same app runs in any browser at the web link, built from the same code (`apps/mobile/wrangler.web.toml`). The iOS app compiles in CI and runs in the iOS Simulator, including in a browser through Appetize.io ([`docs/ios.md`](docs/ios.md)). Installing it on a real iPhone or through TestFlight needs a paid Apple Developer account to sign it. |
 | **"Our song" isn't word for word** | The avatar is asked to sing or say the saved song, and the model may paraphrase it. |
 | **Shared demo budget** | Demo use is capped so the shared account can't run out of credits. |
 

@@ -128,7 +128,7 @@ describe('errorView (friendly full-screen states)', () => {
     expect(v.retry).toBe(true);
   });
   it('MIC_BLOCKED in a browser points at the address bar, not phone settings', () => {
-    const v = errorView('MIC_BLOCKED', { ...who, web: true });
+    const v = errorView('MIC_BLOCKED', { ...who, platform: 'web' });
     expect(v.body).toMatch(/address bar/);
     expect(v.body).not.toMatch(/phone's Settings/);
     expect(v.retry).toBe(true);

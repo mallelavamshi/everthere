@@ -1,0 +1,21 @@
+# iOS Simulator smoke test (run by .github/workflows/ios.yml with Maestro): the app starts, the web bundle renders
+# in the WKWebView (origin capacitor://localhost), and "Try the demo" signs in through Clerk and loads the parent
+# home from the deployed API. No microphone in CI, so no live call.
+appId: app.everthere
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Try the demo.*"
+    timeout: 60000
+- takeScreenshot: 01-welcome
+- tapOn: "Try the demo.*"
+- extendedWaitUntil:
+    visible: "Peek as a Parent.*"
+    timeout: 15000
+- takeScreenshot: 02-demo-sheet
+- tapOn: "Peek as a Parent.*"
+- extendedWaitUntil:
+    visible: "Here.s how things look for .*"
+    timeout: 60000
+- takeScreenshot: 03-parent-home
