@@ -1,6 +1,8 @@
 # Unsigned iOS Simulator build of the EverThere app (apps/mobile), made on a GitHub macOS runner because there is no
 # Mac in the loop. Output: an artifact holding EverThere-simulator.zip (the zipped App.app), ready to upload to
 # Appetize.io or drag onto a local Simulator. No signing material is used or needed. See docs/ios.md.
+# Then a smoke test: the .app runs in an iOS Simulator and Maestro signs in to the demo (apps/mobile/e2e), with
+# screenshots of each step in the EverThere-ios-screenshots artifact.
 name: iOS simulator build
 
 on:
@@ -27,13 +29,13 @@ jobs:
       run:
         working-directory: apps/mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -78,15 +80,61 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent App.app "$GITHUB_WORKSPACE/EverThere-simulator.zip"
           ls -la "$GITHUB_WORKSPACE/EverThere-simulator.zip"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: EverThere-ios-simulator
           path: EverThere-simulator.zip
           if-no-files-found: error
 
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Maestro
+        env:
+          MAESTRO_VERSION: 2.12.1
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Boot an iPhone simulator and install the app
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          d = json.load(sys.stdin)["devices"]
+          ver = lambda k: [int(x) for x in re.findall(r"\d+", k.split("iOS-")[-1])]
+          rts = sorted((k for k in d if "iOS" in k and any(x["name"].startswith("iPhone") for x in d[k])), key=ver)
+          phones = [x for x in d[rts[-1]] if x["name"].startswith("iPhone")]
+          print(phones[0]["udid"]); print(rts[-1], phones[0]["name"], file=sys.stderr)')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" ios/build/Build/Products/Release-iphonesimulator/App.app
+
+      - name: Smoke test (launch, Try the demo, parent home)
+        env:
+          MAESTRO_CLI_NO_ANALYTICS: 1
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 240000
+        run: |
+          mkdir -p e2e-out
+          status=0
+          maestro --device "$UDID" test --test-output-dir e2e-out e2e/ios-demo-parent.yaml || status=$?
+          find . -maxdepth 1 -name '*.png' -exec mv {} e2e-out/ \;
+          xcrun simctl io "$UDID" screenshot e2e-out/99-last-screen.png || true
+          exit "$status"
+
+      - name: Upload smoke-test screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: EverThere-ios-screenshots
+          path: apps/mobile/e2e-out
+          if-no-files-found: ignore
+
       - name: Keep the build log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: xcodebuild-log
           path: apps/mobile/ios/build-log.txt
