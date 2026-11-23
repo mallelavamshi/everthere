@@ -22,11 +22,60 @@ export function phoneScale(windowHeight: number): number {
 
 const APK = 'https://github.com/mallelavamshi/everthere-app/releases/latest';
 const SOURCE = 'https://github.com/mallelavamshi/everthere';
+// Two of the (AI-generated) daycare scenes, faded into opposite corners so judges can picture where the app is used.
+export const SCENE_LEFT = '/scenes/daycare-tablet.webp';
+export const SCENE_RIGHT = '/scenes/daycare-phone.webp';
+
+const SCENE_ASPECT = 2016 / 1152;
+const ASIDE_MIN_WIDTH = 1000;
+const ASIDE_W = 400;
+const GAP = 64;
+
+/**
+ * Width of each corner scene: the whole picture is shown (never cropped, so the child, the device and the teacher
+ * all stay in view), sized to the empty space beside the guide and the phone; only its faded edge reaches them.
+ */
+export function sceneWidth(windowWidth: number, scale: number): number {
+  const content = (windowWidth >= ASIDE_MIN_WIDTH ? ASIDE_W + GAP : 0) + (PHONE_W + BEZEL * 2) * scale;
+  const free = (windowWidth - content) / 2;
+  return Math.round(Math.min(620, Math.max(220, free + 24)));
+}
+
+/** A decorative daycare photo in one corner, its edges feathered so it melts into the background. */
+function CornerScene({ src, corner, width }: { src: string; corner: 'bottom left' | 'top right'; width: number }) {
+  const fadeX = 'linear-gradient(to right, transparent, #000 16%, #000 84%, transparent)';
+  const fadeY = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
+  const [v, h] = corner.split(' ') as ['bottom' | 'top', 'left' | 'right'];
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      data-testid="corner-scene"
+      className="pointer-events-none absolute select-none"
+      style={{
+        [v]: 8,
+        [h]: 8,
+        width,
+        height: Math.round(width / SCENE_ASPECT),
+        opacity: 0.9,
+        WebkitMaskImage: `${fadeX}, ${fadeY}`,
+        WebkitMaskComposite: 'source-in',
+        maskImage: `${fadeX}, ${fadeY}`,
+        maskComposite: 'intersect',
+      }}
+    />
+  );
+}
 
 export function PhoneFrame() {
   const [scale, setScale] = useState(() => phoneScale(window.innerHeight));
+  const [winW, setWinW] = useState(() => window.innerWidth);
   useEffect(() => {
-    const onResize = () => setScale(phoneScale(window.innerHeight));
+    const onResize = () => {
+      setScale(phoneScale(window.innerHeight));
+      setWinW(window.innerWidth);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -35,8 +84,13 @@ export function PhoneFrame() {
   const outerH = PHONE_H + BEZEL * 2;
 
   return (
-    <div className="flex min-h-screen items-center justify-center gap-16 px-8 font-sans text-ink" style={{ background: gradients.sunGradient }}>
-      <aside className="hidden max-w-[400px] min-[1000px]:block">
+    <div
+      className="relative flex min-h-screen items-center justify-center gap-16 overflow-hidden px-8 font-sans text-ink"
+      style={{ background: gradients.sunGradient }}
+    >
+      <CornerScene src={SCENE_LEFT} corner="bottom left" width={sceneWidth(winW, scale)} />
+      <CornerScene src={SCENE_RIGHT} corner="top right" width={sceneWidth(winW, scale)} />
+      <aside className="relative hidden max-w-[400px] min-[1000px]:block">
         <div className="flex items-center gap-3">
           <img src="/everthere-icon.svg" alt="" className="h-14 w-14 rounded-[16px] shadow-chunky" />
           <span className="text-4xl font-bold">EverThere</span>
@@ -73,7 +127,7 @@ export function PhoneFrame() {
         <p className="mt-6 text-sm text-mutedText">Live avatars by Napster on Microsoft Azure</p>
       </aside>
 
-      <div style={{ width: outerW * scale, height: outerH * scale }} className="shrink-0">
+      <div style={{ width: outerW * scale, height: outerH * scale }} className="relative shrink-0">
         <div
           className="rounded-[56px] bg-ink shadow-[0_30px_80px_rgba(43,33,64,0.35)]"
           style={{ width: outerW, height: outerH, padding: BEZEL, transform: `scale(${scale})`, transformOrigin: 'top left' }}

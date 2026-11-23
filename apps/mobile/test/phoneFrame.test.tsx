@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { PhoneFrame, phoneScale, shouldFrame } from '../src/shell/PhoneFrame';
+import { PhoneFrame, phoneScale, SCENE_LEFT, SCENE_RIGHT, sceneWidth, shouldFrame } from '../src/shell/PhoneFrame';
 
 describe('shouldFrame (the web build on a wide screen shows the app inside a phone)', () => {
   const base = { native: false, isTop: true, width: 1440, search: '' };
@@ -30,6 +30,15 @@ describe('phoneScale', () => {
   });
 });
 
+describe('sceneWidth (the corner daycare scenes fill the space beside the guide and the phone)', () => {
+  it('grows with the empty space and stays within sensible bounds', () => {
+    expect(sceneWidth(1920, 1)).toBeGreaterThan(sceneWidth(1440, 1));
+    expect(sceneWidth(1440, 1)).toBeGreaterThan(250);
+    expect(sceneWidth(3840, 1)).toBe(620);
+    expect(sceneWidth(1000, 0.75)).toBeGreaterThanOrEqual(220);
+  });
+});
+
 describe('PhoneFrame', () => {
   it('runs the real app in a phone-sized iframe that may use the microphone, on the same path', () => {
     window.history.pushState({}, '', '/parent?x=1');
@@ -40,6 +49,17 @@ describe('PhoneFrame', () => {
     expect(frame.getAttribute('allow')).toContain('autoplay');
     expect(frame.style.width).toBe('390px');
     expect(frame.style.height).toBe('844px');
+  });
+  it('fades two daycare scenes into the corners, as decoration only', () => {
+    window.history.pushState({}, '', '/');
+    render(<PhoneFrame />);
+    const scenes = screen.getAllByTestId('corner-scene') as HTMLImageElement[];
+    expect(scenes.map((s) => s.getAttribute('src'))).toEqual([SCENE_LEFT, SCENE_RIGHT]);
+    for (const s of scenes) {
+      expect(s).toHaveAttribute('alt', '');
+      expect(s).toHaveAttribute('aria-hidden', 'true');
+      expect(s.className).toContain('pointer-events-none');
+    }
   });
   it('tells judges how to try it and links the APK, the source and the full-width view', () => {
     window.history.pushState({}, '', '/');
