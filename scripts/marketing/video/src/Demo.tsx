@@ -47,8 +47,34 @@ const Caption: React.FC<{step: Step; vertical: boolean}> = ({step, vertical}) =>
 	);
 };
 
+// Two of the (AI-generated) daycare scenes, edges feathered into the gradient (16:9 only), so viewers can picture
+// the room the app is used in. Shown whole, so the child, the device and the teacher all stay in view.
+const SCENE_ASPECT = 1600 / 914;
+const Scene: React.FC<{src: string; corner: 'top' | 'bottom'; width: number}> = ({src, corner, width}) => {
+	const frame = useCurrentFrame();
+	const fadeX = 'linear-gradient(to right, transparent, #000 16%, #000 84%, transparent)';
+	const fadeY = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
+	return (
+		<Img
+			src={staticFile(src)}
+			style={{
+				position: 'absolute',
+				right: 20,
+				[corner]: 12,
+				width,
+				height: Math.round(width / SCENE_ASPECT),
+				opacity: 0.9 * interpolate(frame, [0, 20], [0, 1], {extrapolateRight: 'clamp'}),
+				WebkitMaskImage: `${fadeX}, ${fadeY}`,
+				WebkitMaskComposite: 'source-in',
+				maskImage: `${fadeX}, ${fadeY}`,
+				maskComposite: 'intersect',
+			}}
+		/>
+	);
+};
+
 const Badge: React.FC<{vertical: boolean}> = ({vertical}) => (
-	<div style={{position: 'absolute', ...(vertical ? {left: 0, right: 0, bottom: 34, textAlign: 'center'} : {right: 60, bottom: 44}), fontFamily: font, fontSize: 26, fontWeight: 500, color: 'rgba(43,33,64,0.72)'}}>
+	<div style={{position: 'absolute', ...(vertical ? {left: 0, right: 0, bottom: 34, textAlign: 'center'} : {left: 900, bottom: 44, maxWidth: 420}), fontFamily: font, fontSize: vertical ? 26 : 24, fontWeight: 500, color: 'rgba(43,33,64,0.72)'}}>
 		Real app · real call · Mia's voice is a text-to-speech child voice
 	</div>
 );
@@ -105,6 +131,8 @@ export const Demo: React.FC<{vertical: boolean}> = ({vertical}) => (
 			<Card vertical={vertical} title="EverThere" lines={["A parent's live AI avatar comforts their child,", 'when they can’t be there.', 'Demo: the real app, recorded on a phone']} />
 		</Sequence>
 		<Sequence from={INTRO} durationInFrames={CUT}>
+			{!vertical && <Scene src="scenes/daycare-phone.jpg" corner="top" width={600} />}
+			{!vertical && <Scene src="scenes/daycare-tablet.jpg" corner="bottom" width={560} />}
 			<Phone vertical={vertical} />
 			<Logo vertical={vertical} />
 			{STEPS.map((step, i) => {
