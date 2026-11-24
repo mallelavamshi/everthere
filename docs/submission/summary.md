@@ -33,6 +33,6 @@ Napster runs each conversation on Azure OpenAI realtime.
 - Web app: https://everthere-web.m-vamshikrishna22.workers.dev
 - APK and judge guide: https://github.com/mallelavamshi/everthere-app
 - Source: https://github.com/mallelavamshi/everthere
-- Demo video: https://www.youtube.com/watch?v=8u4zYBWxMKQ
+- Demo video: https://www.youtube.com/watch?v=HwNKQCOXtLM
 
 Tap **Try the demo** to join as Sarah (a parent) or Ms. Jess (a teacher). No account needed.
